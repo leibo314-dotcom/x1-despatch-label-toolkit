@@ -1,25 +1,11 @@
-from __future__ import annotations
+from flask import Flask
 
-import os
-from pathlib import Path
-
-from flask import Flask, render_template
-
-APP_DIR = Path(__file__).resolve().parent
-
-app = Flask(
-    __name__,
-    template_folder=str(APP_DIR / "templates"),
-    static_folder=str(APP_DIR / "public"),
-    static_url_path="",
-)
-app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "x1-despatch-label-local")
+app = Flask(__name__)
 
 
 @app.get("/")
 def index():
-    return render_template("index.html")
+    return "X1 despatch label toolkit is live."
 
 
 if __name__ == "__main__":
