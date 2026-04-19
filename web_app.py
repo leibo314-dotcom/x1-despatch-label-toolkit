@@ -8,8 +8,6 @@ from pathlib import Path
 from flask import Flask, flash, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
 
-from x1_despatch_label_real_diagram import generate_despatch_label
-
 APP_DIR = Path(__file__).resolve().parent
 TMP_ROOT = Path(os.environ.get("TMPDIR") or os.environ.get("TEMP") or "/tmp")
 JOBS_DIR = TMP_ROOT / "x1_despatch_label_jobs"
@@ -62,6 +60,7 @@ def generate():
     uploaded_file.save(paths["input_path"])
 
     try:
+        from x1_despatch_label_real_diagram import generate_despatch_label
         generate_despatch_label(paths["input_path"], paths["output_path"], paths["workdir"])
     except Exception as exc:
         shutil.rmtree(paths["job_dir"], ignore_errors=True)
