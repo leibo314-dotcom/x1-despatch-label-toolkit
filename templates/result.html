@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Download Despatch Label</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">Ready</p>
+      <h1>Your despatch label PDF is generated.</h1>
+      <p class="lede">Source file: {{ source_name }}</p>
+    </section>
+
+    <section class="card result-card">
+      <a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a>
+      <a class="secondary-link" href="{{ url_for('index') }}">Generate another file</a>
+    </section>
+  </main>
+</body>
+</html>

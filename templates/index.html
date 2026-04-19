@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X1 Despatch Label Web App</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">X1 Label Toolkit</p>
+      <h1>Generate despatch labels from an X1 Quote Schedule PDF.</h1>
+      <p class="lede">
+        Upload the quote schedule, let the app rebuild the labels, then download the new PDF.
+        This web version removes TWT and size text, and shows the site address once at the top.
+      </p>
+    </section>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <section class="flash-list">
+          {% for message in messages %}
+            <div class="flash error">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card">
+      <form class="upload-form" action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
+        <label class="dropzone" for="pdf_file">
+          <span class="dropzone-title">Choose PDF</span>
+          <span class="dropzone-copy">Only X1 Quote Schedule style PDFs are supported.</span>
+          <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
+        </label>
+        <button class="primary-btn" type="submit">Generate PDF</button>
+      </form>
+    </section>
+  </main>
+</body>
+</html>

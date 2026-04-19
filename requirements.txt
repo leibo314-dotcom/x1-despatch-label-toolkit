@@ -1,0 +1,6 @@
+flask
+gunicorn
+pdfplumber
+pillow
+reportlab
+pymupdf
