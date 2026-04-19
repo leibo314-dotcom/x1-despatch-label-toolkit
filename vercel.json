@@ -1,8 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "app.py": {
-      "excludeFiles": "{test_output.pdf,*.zip,DEPLOY_VERCEL_STEP_BY_STEP.md,README_WEB.md,README_*.txt,Launch_*.bat,Install_Dependencies.bat,publish_to_github.ps1,render.yaml,Procfile,runtime.txt}"
-    }
-  }
+  "version": 2
 }
