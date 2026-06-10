@@ -39,6 +39,7 @@ class HeaderMeta:
     title: str
     printed: str
     address: str
+    number_of_units: str
 
 
 def clean_desc(desc: str) -> str:
@@ -100,7 +101,13 @@ def parse_header_meta(first_page_text: str) -> HeaderMeta:
         title=title,
         printed=printed,
         address=address,
+        number_of_units="",
     )
+
+
+def parse_number_of_units(text: str) -> str:
+    m = re.search(r"Number\s+of\s+units:\s*(\d+)", text, re.IGNORECASE)
+    return m.group(1) if m else ""
 
 
 def parse_items(pdf_path: Path) -> List[Item]:
@@ -222,12 +229,22 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
             fpage = doc.load_page(pidx)
             pix = fpage.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            words = page.extract_words(x_tolerance=1, y_tolerance=1)
             for item in page_items[pidx]:
+                crop_bottom = item.section_bottom - 5
+                for word in words:
+                    text = word["text"].strip().lower()
+                    if not (item.header_top + 8 < word["top"] < item.section_bottom):
+                        continue
+                    if text.startswith("sundry") or text == "number":
+                        crop_bottom = min(crop_bottom, word["top"] - 4)
+                crop_bottom = max(crop_bottom, item.header_top + 24)
+
                 objs = []
                 for obj in list(page.lines) + list(page.rects):
                     x0, x1 = obj['x0'], obj['x1']
                     top, bottom = obj['top'], obj['bottom']
-                    if x1 < 230 and top > item.header_top + 8 and bottom < item.section_bottom - 5:
+                    if x1 < 230 and top > item.header_top + 8 and bottom < crop_bottom:
                         if abs(x1 - x0) > 300 and abs(bottom - top) < 2:
                             continue
                         objs.append((x0, top, x1, bottom))
@@ -250,13 +267,13 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
                     x0 = max(0, x0 - 6)
                     y0 = max(0, y0 - 6)
                     x1 = min(225, x1 + 6)
-                    y1 = min(page.height, y1 + 8)
+                    y1 = min(page.height, crop_bottom, y1 + 8)
                     crop = img.crop((int(x0 * scale), int(y0 * scale), int(x1 * scale), int(y1 * scale)))
                 else:
                     x0_pt = 18
                     x1_pt = 225
                     y0_pt = item.header_top + 4
-                    y1_pt = item.section_bottom - 4
+                    y1_pt = crop_bottom
                     crop = img.crop((int(x0_pt * scale), int(y0_pt * scale), int(x1_pt * scale), int(y1_pt * scale)))
                     crop = trim_diagram(crop)
                 out_path = out_dir / f"diagram_{item.no}.png"
@@ -331,7 +348,10 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         y_top = ph - top_margin - header_space - row * (block_h + row_gap)
         if pos == 0:
             c.setFont('Helvetica-Bold', 9)
-            c.drawString(left_margin, ph - top_margin - 2, f'Qte#: {meta.quote_no}')
+            header_text = f'Qte#: {meta.quote_no}'
+            if meta.number_of_units:
+                header_text += f'    Number of units: {meta.number_of_units}'
+            c.drawString(left_margin, ph - top_margin - 2, header_text)
             if idx == 0 and meta.address:
                 c.setFont('Helvetica-Bold', 10)
                 c.drawCentredString(pw / 2, ph - top_margin - 2, meta.address)
@@ -339,8 +359,8 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         ty = y_top - 7
 
         # text block
-        field_size = 5.0
-        line_step = 5.35
+        field_size = 5.6
+        line_step = 5.95
         # first line qte
         draw_field(c, x, ty, 'Qte#:', meta.quote_no, block_w, size=field_size)
         ty -= line_step
@@ -416,7 +436,9 @@ def generate_despatch_label(input_path: Path, output_path: Path, workdir: Path) 
     items = parse_items(input_path)
     with pdfplumber.open(str(input_path)) as pdf:
         first_text = pdf.pages[0].extract_text() or ''
+        full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
     meta = parse_header_meta(first_text)
+    meta.number_of_units = parse_number_of_units(full_text)
     diagrams = extract_diagram_images(input_path, items, workdir / 'diagrams')
     make_pdf(items, diagrams, output_path, meta)
     return output_path
