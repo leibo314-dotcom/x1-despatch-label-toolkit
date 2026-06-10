@@ -186,32 +186,36 @@ def trim_diagram(crop: Image.Image) -> Image.Image:
 
     top = max(int(nz[0]) - 6, 0)
 
-    # Keep the full diagram including the lower dimension line, but stop before
-    # the next large blank gap that precedes Sundry / next item content.
+    # Sundry/summary text is excluded before this trim runs, so keep the last
+    # visible dimension line instead of stopping at the blank gap below a frame.
     bottom = int(nz[-1])
-    gaps = np.diff(nz)
-    large_gap_positions = np.where(gaps >= 14)[0]
-    if len(large_gap_positions):
-        # Prefer the last large gap that occurs after the diagram area starts.
-        chosen = None
-        for idx in large_gap_positions:
-            if nz[idx] > h * 0.35:
-                chosen = idx
-        if chosen is not None:
-            bottom = int(nz[chosen])
     bottom = min(bottom + 10, h - 1)
 
     crop2 = crop.crop((0, top, w, bottom))
     mask2 = dark_mask(crop2)
+    if mask2.any():
+        h2, w2 = mask2.shape
+        separator_rows = []
+        for row_idx in range(int(h2 * 0.6), h2):
+            row = mask2[row_idx]
+            if row.sum() <= w2 * 0.9:
+                continue
+            xs = np.where(row)[0]
+            if len(xs) and xs[0] < 15 and xs[-1] > w2 - 15:
+                separator_rows.append(row_idx)
+        if separator_rows:
+            cut_at = max(separator_rows[0] - 6, 1)
+            crop2 = crop2.crop((0, 0, w2, cut_at))
+            mask2 = dark_mask(crop2)
     coords = np.argwhere(mask2)
     if len(coords) == 0:
         return crop2
     y0, x0 = coords.min(axis=0)
     y1, x1 = coords.max(axis=0)
-    x0 = max(int(x0) - 8, 0)
-    x1 = min(int(x1) + 8, crop2.width - 1)
-    y0 = max(int(y0) - 6, 0)
-    y1 = min(int(y1) + 10, crop2.height - 1)
+    x0 = max(int(x0) - 12, 0)
+    x1 = min(int(x1) + 12, crop2.width - 1)
+    y0 = max(int(y0) - 12, 0)
+    y1 = min(int(y1) + 12, crop2.height - 1)
     return crop2.crop((x0, y0, x1, y1))
 
 
@@ -269,6 +273,7 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
                     x1 = min(225, x1 + 6)
                     y1 = min(page.height, crop_bottom, y1 + 8)
                     crop = img.crop((int(x0 * scale), int(y0 * scale), int(x1 * scale), int(y1 * scale)))
+                    crop = trim_diagram(crop)
                 else:
                     x0_pt = 18
                     x1_pt = 225
@@ -277,6 +282,7 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
                     crop = img.crop((int(x0_pt * scale), int(y0_pt * scale), int(x1_pt * scale), int(y1_pt * scale)))
                     crop = trim_diagram(crop)
                 out_path = out_dir / f"diagram_{item.no}.png"
+                crop = trim_diagram(crop)
                 crop.save(out_path)
                 result[item.no] = out_path
         return result
