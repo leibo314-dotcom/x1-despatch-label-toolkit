@@ -340,7 +340,7 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
     pw, ph = landscape(A4)
     c = canvas.Canvas(str(out_path), pagesize=landscape(A4))
 
-    cols, rows = 8, 2
+    cols, rows = 7, 2
     left_margin = 6 * mm
     right_margin = 6 * mm
     top_margin = 7 * mm
@@ -364,15 +364,15 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
             if meta.number_of_units:
                 header_text += f'    Number of units: {meta.number_of_units}'
             c.drawString(left_margin, ph - top_margin - 2, header_text)
-            if idx == 0 and meta.title:
+            if meta.title:
                 c.setFont('Helvetica-Bold', 10)
                 c.drawCentredString(pw / 2, ph - top_margin - 2, meta.title)
         # origin top-left concept
         ty = y_top - 7
 
         # text block
-        field_size = 5.6
-        line_step = 5.95
+        field_size = 6.4
+        line_step = 6.8
         # first line qte
         draw_field(c, x, ty, 'Qte#:', meta.quote_no, block_w, size=field_size)
         ty -= line_step
