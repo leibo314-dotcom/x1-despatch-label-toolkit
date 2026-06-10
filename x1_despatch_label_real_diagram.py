@@ -74,23 +74,11 @@ def parse_header_meta(first_page_text: str) -> HeaderMeta:
     m = re.search(r"Printed:\s*(\d{2}/\d{2}/\d{4})", first_page_text)
     if m:
         printed = m.group(1)
-    title = ""
     lines = [ln.strip() for ln in first_page_text.splitlines() if ln.strip()]
-    template_idx = next((i for i, ln in enumerate(lines) if 'TEMPLATE' in ln.upper()), None)
-    schedule_idx = next((i for i, ln in enumerate(lines) if ln.startswith('Schedule')), None)
-    if template_idx is not None and schedule_idx is not None:
-        candidates = []
-        for ln in lines[template_idx + 1:schedule_idx]:
-            if ':' in ln:
-                continue
-            if any(ch.isdigit() for ch in ln):
-                continue
-            if ln.upper() == 'ROLLeston'.upper():
-                continue
-            candidates.append(ln)
-        if candidates:
-            # prefer first non-duplicate pair like Harrow Green
-            title = candidates[0]
+    title = next(
+        (ln for ln in lines if re.fullmatch(r"[A-Z]{1,6}\d{3,}[A-Z0-9]*", ln)),
+        "",
+    )
     address = ""
     for ln in lines:
         if looks_like_address(ln):
@@ -103,6 +91,24 @@ def parse_header_meta(first_page_text: str) -> HeaderMeta:
         address=address,
         number_of_units="",
     )
+
+
+def parse_job_name_from_position(words: List[dict], page_width: float, page_height: float) -> str:
+    center_x = page_width / 2
+    candidates = []
+    for word in words:
+        text = word["text"].strip()
+        if not re.fullmatch(r"[A-Z]{1,6}\d{3,}[A-Z0-9]*", text):
+            continue
+        word_center = (word["x0"] + word["x1"]) / 2
+        if abs(word_center - center_x) > page_width * 0.18:
+            continue
+        if not (page_height * 0.12 < word["top"] < page_height * 0.32):
+            continue
+        center_score = abs(word_center - center_x)
+        top_score = abs(word["top"] - page_height * 0.2)
+        candidates.append((center_score + top_score, text))
+    return min(candidates)[1] if candidates else ""
 
 
 def parse_number_of_units(text: str) -> str:
@@ -358,9 +364,9 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
             if meta.number_of_units:
                 header_text += f'    Number of units: {meta.number_of_units}'
             c.drawString(left_margin, ph - top_margin - 2, header_text)
-            if idx == 0 and meta.address:
+            if idx == 0 and meta.title:
                 c.setFont('Helvetica-Bold', 10)
-                c.drawCentredString(pw / 2, ph - top_margin - 2, meta.address)
+                c.drawCentredString(pw / 2, ph - top_margin - 2, meta.title)
         # origin top-left concept
         ty = y_top - 7
 
@@ -441,9 +447,14 @@ def generate_despatch_label(input_path: Path, output_path: Path, workdir: Path) 
 
     items = parse_items(input_path)
     with pdfplumber.open(str(input_path)) as pdf:
-        first_text = pdf.pages[0].extract_text() or ''
+        first_page = pdf.pages[0]
+        first_text = first_page.extract_text() or ''
+        first_words = first_page.extract_words(x_tolerance=1, y_tolerance=1)
+        job_name = parse_job_name_from_position(first_words, first_page.width, first_page.height)
         full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
     meta = parse_header_meta(first_text)
+    if job_name:
+        meta.title = job_name
     meta.number_of_units = parse_number_of_units(full_text)
     diagrams = extract_diagram_images(input_path, items, workdir / 'diagrams')
     make_pdf(items, diagrams, output_path, meta)
