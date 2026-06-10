@@ -410,10 +410,10 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
     c = canvas.Canvas(str(out_path), pagesize=landscape(A4))
 
     cols, rows = 7, 2
-    left_margin = 6 * mm
-    right_margin = 6 * mm
-    top_margin = 7 * mm
-    bottom_margin = 7 * mm
+    left_margin = 8 * mm
+    right_margin = 8 * mm
+    top_margin = 8 * mm
+    bottom_margin = 8 * mm
     header_space = 10 * mm
     col_gap = 2.0 * mm
     row_gap = 10 * mm
