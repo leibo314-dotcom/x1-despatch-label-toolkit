@@ -336,6 +336,75 @@ def draw_field(c: canvas.Canvas, x: float, y: float, label: str, value: str, wid
     c.drawString(x + label_w + 1, y, value)
 
 
+def text_block_bottom_y(item: Item, meta: HeaderMeta, block_w: float, y_top: float, field_size: float, line_step: float) -> float:
+    ty = y_top - 7
+    ty -= line_step
+
+    title_lines = wrap_text(meta.title, 'Helvetica', field_size, block_w - 18, 2)
+    if len(title_lines) > 1:
+        ty -= line_step
+    ty -= line_step
+
+    ty -= line_step
+
+    desc_lines = wrap_text(item.desc, 'Helvetica', field_size, block_w - 20, 2)
+    if len(desc_lines) > 1:
+        ty -= line_step
+    ty -= line_step
+
+    ty -= line_step
+
+    flash_lines = wrap_text(item.flashing, 'Helvetica', field_size, block_w - 20, 2)
+    if len(flash_lines) > 1:
+        ty -= line_step
+    ty -= line_step
+
+    wanz_lines = wrap_text(item.wanz, 'Helvetica', field_size, block_w - 18, 2)
+    if len(wanz_lines) > 1:
+        ty -= line_step
+    ty -= line_step
+
+    return ty
+
+
+def calculate_diagram_scale(
+    items: List[Item],
+    diagrams: Dict[int, Path],
+    meta: HeaderMeta,
+    block_w: float,
+    block_h: float,
+    top_margin: float,
+    header_space: float,
+    bottom_margin: float,
+    row_gap: float,
+    rows: int,
+    cols: int,
+    ph: float,
+    field_size: float,
+    line_step: float,
+) -> float:
+    scales = []
+    for idx, item in enumerate(items):
+        img_path = diagrams.get(item.no)
+        if not img_path or not img_path.exists():
+            continue
+        pos = idx % (cols * rows)
+        row = pos // cols
+        y_top = ph - top_margin - header_space - row * (block_h + row_gap)
+        ty = text_block_bottom_y(item, meta, block_w, y_top, field_size, line_step)
+        block_bottom = y_top - block_h
+        printed_y = block_bottom + 6
+        zone_bottom = printed_y + 7
+        zone_top = ty - 4
+        max_img_h = max(zone_top - zone_bottom, 10)
+        max_img_w = block_w - 2
+        with Image.open(img_path) as im:
+            w, h = im.size
+        if w and h:
+            scales.append(min(max_img_w / w, max_img_h / h))
+    return min(scales) if scales else 1.0
+
+
 def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta: HeaderMeta):
     pw, ph = landscape(A4)
     c = canvas.Canvas(str(out_path), pagesize=landscape(A4))
@@ -350,6 +419,24 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
     row_gap = 10 * mm
     block_w = (pw - left_margin - right_margin - col_gap * (cols - 1)) / cols
     block_h = (ph - top_margin - bottom_margin - header_space - row_gap * (rows - 1)) / rows
+    field_size = 6.4
+    line_step = 6.8
+    diagram_scale = calculate_diagram_scale(
+        items,
+        diagrams,
+        meta,
+        block_w,
+        block_h,
+        top_margin,
+        header_space,
+        bottom_margin,
+        row_gap,
+        rows,
+        cols,
+        ph,
+        field_size,
+        line_step,
+    )
 
     for idx, item in enumerate(items):
         page_idx = idx // (cols * rows)
@@ -371,8 +458,6 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         ty = y_top - 7
 
         # text block
-        field_size = 6.4
-        line_step = 6.8
         # first line qte
         draw_field(c, x, ty, 'Qte#:', meta.quote_no, block_w, size=field_size)
         ty -= line_step
@@ -428,7 +513,11 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         max_img_h = max(zone_top - zone_bottom, 10)
         max_img_w = block_w - 2
         if img_path and img_path.exists():
-            draw_w, draw_h = fit_image(img_path, max_img_w, max_img_h)
+            with Image.open(img_path) as im:
+                img_w, img_h = im.size
+            local_scale = min(max_img_w / img_w, max_img_h / img_h)
+            draw_scale = min(diagram_scale, local_scale)
+            draw_w, draw_h = img_w * draw_scale, img_h * draw_scale
             ix = x + (block_w - draw_w) / 2
             iy = zone_bottom + max((max_img_h - draw_h) / 2, 0)
             c.drawImage(ImageReader(str(img_path)), ix, iy, width=draw_w, height=draw_h, preserveAspectRatio=True, mask='auto')
