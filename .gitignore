@@ -1,3 +1,33 @@
 web_jobs/
 __pycache__/
 *.pyc
+
+# Added by Codex project sync
+# Local dependencies and caches
+node_modules/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.next/
+.turbo/
+dist/
+build/
+.cache/
+.codex_pydeps/
+_doc_insert_work/
+tmp/
+*.log
+# Local secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+credentials.json
+secrets.json
+# OS files
+.DS_Store
+Thumbs.db
