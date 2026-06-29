@@ -123,20 +123,12 @@ def parse_company_name_from_position(words: List[dict], page_width: float, page_
             continue
         if x0 > page_width * 0.16 or x1 > page_width * 0.48:
             continue
-        text = line_text(line)
-        if re.search(r"\b(?:phone|mobile|windows|doors|lidar)\b", text, re.IGNORECASE):
-            continue
-        if len(text.split()) >= 2:
-            return text
+        return line_text(line)
     return ""
 
 
 def parse_job_description_from_position(words: List[dict], page_width: float, page_height: float) -> str:
     center_x = page_width / 2
-    ignored = re.compile(
-        r"\b(?:phone|mobile|schedule|client|printed|version|page|lidar|windows|doors)\b",
-        re.IGNORECASE,
-    )
     for line in group_words_by_line(words):
         if not line:
             continue
@@ -146,10 +138,7 @@ def parse_job_description_from_position(words: List[dict], page_width: float, pa
         line_center = (min(word["x0"] for word in line) + max(word["x1"] for word in line)) / 2
         if abs(line_center - center_x) > page_width * 0.12:
             continue
-        text = line_text(line)
-        if not text or ignored.search(text):
-            continue
-        return text
+        return line_text(line)
     return ""
 
 
