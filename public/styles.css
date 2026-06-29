@@ -132,6 +132,26 @@ body {
   flex-wrap: wrap;
 }
 
+.usage-stat {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin: 46px auto 0;
+  color: var(--muted);
+}
+
+.usage-stat-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.usage-stat-number {
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .flash-list {
   margin-bottom: 18px;
 }

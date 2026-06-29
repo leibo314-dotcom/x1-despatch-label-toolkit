@@ -13,6 +13,8 @@ app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 TMP_ROOT = Path(os.environ.get("TMPDIR") or os.environ.get("TEMP") or "/tmp")
 JOBS_DIR = TMP_ROOT / "x1_despatch_label_jobs"
 ALLOWED_EXTENSIONS = {".pdf"}
+USAGE_COUNT_START = 50
+USAGE_COUNT_FILE = JOBS_DIR / "usage_count.txt"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -30,9 +32,22 @@ def get_job_paths(job_id: str) -> dict[str, Path]:
     }
 
 
+def get_usage_count() -> int:
+    try:
+        return max(USAGE_COUNT_START, int(USAGE_COUNT_FILE.read_text().strip()))
+    except (OSError, ValueError):
+        return USAGE_COUNT_START
+
+
+def increment_usage_count() -> int:
+    usage_count = get_usage_count() + 1
+    USAGE_COUNT_FILE.write_text(str(usage_count))
+    return usage_count
+
+
 @app.get("/")
 def index():
-    return render_template("index.html")
+    return render_template("index.html", usage_count=get_usage_count())
 
 
 @app.post("/generate")
@@ -56,6 +71,7 @@ def generate():
         from x1_despatch_label_real_diagram import generate_despatch_label
 
         generate_despatch_label(paths["input_path"], paths["output_path"], paths["workdir"])
+        increment_usage_count()
     except Exception as exc:
         shutil.rmtree(paths["job_dir"], ignore_errors=True)
         flash(f"Generation failed: {exc}")
@@ -76,6 +92,7 @@ def result(job_id: str):
         "result.html",
         job_id=job_id,
         source_name=source_name,
+        usage_count=get_usage_count(),
     )
 
 

@@ -5,7 +5,7 @@ import argparse
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pdfplumber
 import fitz
@@ -37,6 +37,8 @@ class Item:
 class HeaderMeta:
     quote_no: str
     title: str
+    company_name: str
+    job_description: str
     printed: str
     address: str
     number_of_units: str
@@ -87,10 +89,68 @@ def parse_header_meta(first_page_text: str) -> HeaderMeta:
     return HeaderMeta(
         quote_no=quote_no,
         title=title,
+        company_name="",
+        job_description=title,
         printed=printed,
         address=address,
         number_of_units="",
     )
+
+
+def group_words_by_line(words: List[dict], y_tolerance: float = 3.0) -> List[List[dict]]:
+    sorted_words = sorted(words, key=lambda w: (w["top"], w["x0"]))
+    lines: List[List[dict]] = []
+    for word in sorted_words:
+        if not lines or abs(lines[-1][0]["top"] - word["top"]) > y_tolerance:
+            lines.append([word])
+        else:
+            lines[-1].append(word)
+    return lines
+
+
+def line_text(line: List[dict]) -> str:
+    return " ".join(word["text"].strip() for word in sorted(line, key=lambda w: w["x0"]) if word["text"].strip())
+
+
+def parse_company_name_from_position(words: List[dict], page_width: float, page_height: float) -> str:
+    for line in group_words_by_line(words):
+        if not line:
+            continue
+        top = min(word["top"] for word in line)
+        x0 = min(word["x0"] for word in line)
+        x1 = max(word["x1"] for word in line)
+        if not (page_height * 0.09 < top < page_height * 0.18):
+            continue
+        if x0 > page_width * 0.16 or x1 > page_width * 0.48:
+            continue
+        text = line_text(line)
+        if re.search(r"\b(?:phone|mobile|windows|doors|lidar)\b", text, re.IGNORECASE):
+            continue
+        if len(text.split()) >= 2:
+            return text
+    return ""
+
+
+def parse_job_description_from_position(words: List[dict], page_width: float, page_height: float) -> str:
+    center_x = page_width / 2
+    ignored = re.compile(
+        r"\b(?:phone|mobile|schedule|client|printed|version|page|lidar|windows|doors)\b",
+        re.IGNORECASE,
+    )
+    for line in group_words_by_line(words):
+        if not line:
+            continue
+        top = min(word["top"] for word in line)
+        if not (page_height * 0.12 < top < page_height * 0.28):
+            continue
+        line_center = (min(word["x0"] for word in line) + max(word["x1"] for word in line)) / 2
+        if abs(line_center - center_x) > page_width * 0.12:
+            continue
+        text = line_text(line)
+        if not text or ignored.search(text):
+            continue
+        return text
+    return ""
 
 
 def parse_job_name_from_position(words: List[dict], page_width: float, page_height: float) -> str:
@@ -141,6 +201,10 @@ def parse_items(pdf_path: Path) -> List[Item]:
                 m_frame = re.search(r"\n([^\n]*\([^\n]*\)[^\n]*)\n", seg)
                 if m_frame:
                     frame = m_frame.group(1).strip()
+                if not frame:
+                    # Sundry-only rows can still be numbered in X1, but they
+                    # are not physical units and should not become labels.
+                    continue
                 suite = ""
                 m_suite = re.search(r"\(([^)]+)\)", frame)
                 if m_suite:
@@ -157,6 +221,8 @@ def parse_items(pdf_path: Path) -> List[Item]:
                 wanz = m_wanz.group(2).strip() if m_wanz else ""
                 m_kg = re.search(r"Est\. weight:\s*([\d.]+)", seg)
                 kg = m_kg.group(1) if m_kg else ""
+                if not kg:
+                    continue
                 items.append(Item(
                     no=item_no,
                     desc=desc,
@@ -170,7 +236,6 @@ def parse_items(pdf_path: Path) -> List[Item]:
                     header_bottom=w['bottom'],
                     section_bottom=end,
                 ))
-    items.sort(key=lambda x: x.no)
     return items
 
 
@@ -202,7 +267,7 @@ def trim_diagram(crop: Image.Image) -> Image.Image:
     if mask2.any():
         h2, w2 = mask2.shape
         separator_rows = []
-        for row_idx in range(int(h2 * 0.6), h2):
+        for row_idx in range(int(h2 * 0.25), h2):
             row = mask2[row_idx]
             if row.sum() <= w2 * 0.9:
                 continue
@@ -248,6 +313,16 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
                         continue
                     if text.startswith("sundry") or text == "number":
                         crop_bottom = min(crop_bottom, word["top"] - 4)
+                for line in page.lines:
+                    width = abs(line["x1"] - line["x0"])
+                    if not (item.header_top + 24 < line["top"] < crop_bottom):
+                        continue
+                    if (
+                        width > page.width * 0.75
+                        and line["x0"] < page.width * 0.12
+                        and line["x1"] > page.width * 0.88
+                    ):
+                        crop_bottom = min(crop_bottom, line["top"] - 4)
                 crop_bottom = max(crop_bottom, item.header_top + 24)
 
                 objs = []
@@ -334,6 +409,15 @@ def draw_field(c: canvas.Canvas, x: float, y: float, label: str, value: str, wid
     label_w = pdfmetrics.stringWidth(label, 'Helvetica-Bold', size)
     c.setFont('Helvetica', size)
     c.drawString(x + label_w + 1, y, value)
+
+
+def fit_text_width(text: str, font_name: str, font_size: float, max_width: float) -> str:
+    if pdfmetrics.stringWidth(text, font_name, font_size) <= max_width:
+        return text
+    suffix = "..."
+    while text and pdfmetrics.stringWidth(text + suffix, font_name, font_size) > max_width:
+        text = text[:-1].rstrip()
+    return f"{text}{suffix}" if text else suffix
 
 
 def text_block_bottom_y(item: Item, meta: HeaderMeta, block_w: float, y_top: float, field_size: float, line_step: float) -> float:
@@ -446,14 +530,29 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         x = left_margin + col * (block_w + col_gap)
         y_top = ph - top_margin - header_space - row * (block_h + row_gap)
         if pos == 0:
-            c.setFont('Helvetica-Bold', 9)
+            header_font = 'Helvetica-Bold'
+            header_size = 9
+            c.setFont(header_font, header_size)
             header_text = f'Qte#: {meta.quote_no}'
             if meta.number_of_units:
                 header_text += f'    Number of units: {meta.number_of_units}'
             c.drawString(left_margin, ph - top_margin - 2, header_text)
-            if meta.title:
-                c.setFont('Helvetica-Bold', 10)
-                c.drawCentredString(pw / 2, ph - top_margin - 2, meta.title)
+            company_gap = pdfmetrics.stringWidth('abcde', header_font, header_size)
+            company_x = left_margin + pdfmetrics.stringWidth(header_text, header_font, header_size) + company_gap
+            job_x = left_margin + 470
+            if meta.company_name:
+                c.drawString(
+                    company_x,
+                    ph - top_margin - 2,
+                    fit_text_width(meta.company_name, header_font, header_size, job_x - company_x - 10),
+                )
+            job_description = meta.job_description or meta.title
+            if job_description:
+                c.drawString(
+                    job_x,
+                    ph - top_margin - 2,
+                    fit_text_width(job_description, header_font, header_size, pw - right_margin - job_x),
+                )
         # origin top-left concept
         ty = y_top - 7
 
@@ -539,11 +638,19 @@ def generate_despatch_label(input_path: Path, output_path: Path, workdir: Path) 
         first_page = pdf.pages[0]
         first_text = first_page.extract_text() or ''
         first_words = first_page.extract_words(x_tolerance=1, y_tolerance=1)
+        company_name = parse_company_name_from_position(first_words, first_page.width, first_page.height)
+        job_description = parse_job_description_from_position(first_words, first_page.width, first_page.height)
         job_name = parse_job_name_from_position(first_words, first_page.width, first_page.height)
         full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
     meta = parse_header_meta(first_text)
+    if company_name:
+        meta.company_name = company_name
     if job_name:
         meta.title = job_name
+    if job_description:
+        meta.job_description = job_description
+    elif meta.title:
+        meta.job_description = meta.title
     meta.number_of_units = parse_number_of_units(full_text)
     diagrams = extract_diagram_images(input_path, items, workdir / 'diagrams')
     make_pdf(items, diagrams, output_path, meta)
