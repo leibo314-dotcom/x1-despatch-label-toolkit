@@ -73,8 +73,13 @@
     {% endif %}
 
     <section class="card result-card">
-      <a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a>
-      <a class="secondary-link" href="{{ url_for('index') }}">Generate another file</a>
+      {% if demo_mode %}
+        <p>This is a test example. Item 13 has been given a different colour so you can review the warning.</p>
+        <a class="primary-btn" href="{{ url_for('index') }}">Try your own schedule</a>
+      {% else %}
+        <a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a>
+        <a class="secondary-link" href="{{ url_for('index') }}">Generate another file</a>
+      {% endif %}
     </section>
 
   </main>

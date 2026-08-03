@@ -86,6 +86,28 @@ def index():
     return render_template("index.html")
 
 
+@app.get("/colour-warning-demo")
+def colour_warning_demo():
+    return render_template(
+        "result.html",
+        job_id=None,
+        source_name="Colour warning preview",
+        demo_mode=True,
+        colour_check={
+            "status": "warning",
+            "has_mismatch": True,
+            "has_missing": False,
+            "item_count": 13,
+            "colour_count": 2,
+            "groups": [
+                {"colour": "AEONOX Flaxpod", "items": "1-12"},
+                {"colour": "Matt Black", "items": "13"},
+            ],
+            "missing_items": "",
+        },
+    )
+
+
 @app.post("/generate")
 def generate():
     uploaded_file = request.files.get("pdf_file")
