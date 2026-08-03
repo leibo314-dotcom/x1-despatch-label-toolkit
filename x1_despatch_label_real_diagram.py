@@ -45,62 +45,9 @@ class HeaderMeta:
     number_of_units: str
 
 
-@dataclass
-class SummaryRow:
-    kind: str
-    size: str
-    quantity: int
-
-
 def clean_desc(desc: str) -> str:
     desc = re.sub(r"\s+", " ", desc).strip()
     return desc
-
-
-def extract_size(text: str) -> Tuple[str, str]:
-    match = re.search(r"\b(\d+(?:\.\d+)?)\s*mm\b", text, re.IGNORECASE)
-    if not match:
-        return clean_desc(text), "-"
-
-    number = match.group(1).rstrip("0").rstrip(".") if "." in match.group(1) else match.group(1)
-    remaining = clean_desc(f"{text[:match.start()]} {text[match.end():]}")
-    remaining = re.sub(r"^\s*[-:]\s*|\s*[-:]\s*$", "", remaining).strip()
-    return remaining, f"{number} mm"
-
-
-def flashing_kind_and_size(value: str) -> Tuple[str, str]:
-    text = clean_desc(value or "")
-    if not text:
-        return "Not specified", "-"
-    text = re.sub(r"^(?:Head\s+)?Flashing\s*:\s*", "", text, flags=re.IGNORECASE)
-    kind, size = extract_size(text)
-    return kind or "Not specified", size
-
-
-def wanz_kind_and_size(value: str) -> Tuple[str, str]:
-    text = clean_desc(value or "")
-    if not text:
-        return "Not specified", "-"
-    text = re.sub(r"^(?:Cill|Sill)\s+Support\s*:\s*", "", text, flags=re.IGNORECASE)
-    code = ""
-    code_match = re.match(r"(\d+)\s*-\s*", text)
-    if code_match:
-        code = code_match.group(1)
-        text = text[code_match.end():]
-    kind, size = extract_size(text)
-    kind = clean_desc(f"{code} {kind}")
-    return kind or "Not specified", size
-
-
-def summarise_items(items: List[Item], attribute: str, parser) -> List[SummaryRow]:
-    grouped: Dict[Tuple[str, str], SummaryRow] = {}
-    for item in items:
-        kind, size = parser(getattr(item, attribute, ""))
-        key = (kind.casefold(), size.casefold())
-        if key not in grouped:
-            grouped[key] = SummaryRow(kind=kind, size=size, quantity=0)
-        grouped[key].quantity += 1
-    return list(grouped.values())
 
 
 def looks_like_address(line: str) -> bool:
@@ -468,60 +415,6 @@ def fit_text_width(text: str, font_name: str, font_size: float, max_width: float
     return f"{text}{suffix}" if text else suffix
 
 
-def draw_summary_table(
-    c: canvas.Canvas,
-    x: float,
-    y_top: float,
-    width: float,
-    title: str,
-    rows: List[SummaryRow],
-) -> None:
-    padding = 3.0
-    title_size = 6.3
-    header_size = 4.8
-    body_size = 5.2
-    title_step = 7.2
-    header_step = 6.2
-    row_step = 6.4
-    height = padding * 2 + title_step + header_step + max(len(rows), 1) * row_step
-    y_bottom = y_top - height
-
-    c.saveState()
-    c.setFillColorRGB(0.965, 0.972, 0.98)
-    c.setStrokeColorRGB(0.72, 0.75, 0.79)
-    c.setLineWidth(0.45)
-    c.roundRect(x, y_bottom, width, height, 2.5, fill=1, stroke=1)
-
-    type_x = x + padding
-    qty_right = x + width - padding
-    size_right = qty_right - 18
-    type_width = size_right - type_x - 32
-
-    y = y_top - padding - title_size
-    c.setFillColorRGB(0.12, 0.14, 0.17)
-    c.setFont("Helvetica-Bold", title_size)
-    c.drawString(type_x, y, title)
-
-    y -= title_step
-    c.setFillColorRGB(0.34, 0.37, 0.42)
-    c.setFont("Helvetica-Bold", header_size)
-    c.drawString(type_x, y, "Type")
-    c.drawRightString(size_right, y, "Size")
-    c.drawRightString(qty_right, y, "Qty")
-
-    c.setStrokeColorRGB(0.82, 0.84, 0.87)
-    c.line(type_x, y - 1.7, qty_right, y - 1.7)
-    c.setFillColorRGB(0.08, 0.09, 0.11)
-    c.setFont("Helvetica", body_size)
-    for row in rows or [SummaryRow("Not specified", "-", 0)]:
-        y -= row_step
-        kind = fit_text_width(row.kind, "Helvetica", body_size, type_width)
-        c.drawString(type_x, y, kind)
-        c.drawRightString(size_right, y, row.size)
-        c.drawRightString(qty_right, y, str(row.quantity))
-    c.restoreState()
-
-
 def text_block_bottom_y(item: Item, block_w: float, y_top: float, field_size: float, line_step: float) -> float:
     ty = y_top - 7
 
@@ -591,8 +484,6 @@ def calculate_diagram_scale(
 def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta: HeaderMeta):
     pw, ph = landscape(A4)
     c = canvas.Canvas(str(out_path), pagesize=landscape(A4))
-    flashing_summary = summarise_items(items, "flashing", flashing_kind_and_size)
-    wanz_summary = summarise_items(items, "wanz", wanz_kind_and_size)
 
     cols, rows = 7, 2
     left_margin = 8 * mm
@@ -675,28 +566,6 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
                     job_x,
                     header_y,
                     job_text,
-                )
-            if page_idx == 0:
-                summary_width = 60 * mm
-                summary_gap = 3 * mm
-                summary_right = pw - right_margin
-                summary_left = summary_right - summary_width * 2 - summary_gap
-                summary_top = header_y - 8
-                draw_summary_table(
-                    c,
-                    summary_left,
-                    summary_top,
-                    summary_width,
-                    "Flashing summary",
-                    flashing_summary,
-                )
-                draw_summary_table(
-                    c,
-                    summary_left + summary_width + summary_gap,
-                    summary_top,
-                    summary_width,
-                    "WANZ summary",
-                    wanz_summary,
                 )
         # origin top-left concept
         ty = y_top - text_down_shift - 7
