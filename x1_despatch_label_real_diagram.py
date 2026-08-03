@@ -22,6 +22,7 @@ DPI = 220
 class Item:
     no: int
     desc: str
+    colour: str
     frame: str
     suite: str
     flashing: str
@@ -186,6 +187,10 @@ def parse_items(pdf_path: Path) -> List[Item]:
                     continue
                 desc = clean_desc(m.group(1))
                 seg = m.group(2)
+                colour = ""
+                m_colour = re.search(r"(?:^|\n)\s*Colou?r\s*:\s*([^\n]+)", seg, re.IGNORECASE)
+                if m_colour:
+                    colour = clean_desc(m_colour.group(1))
                 frame = ""
                 m_frame = re.search(r"\n([^\n]*\([^\n]*\)[^\n]*)\n", seg)
                 if m_frame:
@@ -215,6 +220,7 @@ def parse_items(pdf_path: Path) -> List[Item]:
                 items.append(Item(
                     no=item_no,
                     desc=desc,
+                    colour=colour,
                     frame=frame,
                     suite=suite,
                     flashing=flashing,
@@ -409,15 +415,14 @@ def fit_text_width(text: str, font_name: str, font_size: float, max_width: float
     return f"{text}{suffix}" if text else suffix
 
 
-def text_block_bottom_y(item: Item, meta: HeaderMeta, block_w: float, y_top: float, field_size: float, line_step: float) -> float:
+def text_block_bottom_y(item: Item, block_w: float, y_top: float, field_size: float, line_step: float) -> float:
     ty = y_top - 7
+
     ty -= line_step
 
-    title_lines = wrap_text(meta.title, 'Helvetica', field_size, block_w - 18, 2)
-    if len(title_lines) > 1:
+    colour_lines = wrap_text(item.colour, 'Helvetica', field_size, block_w - 24, 2)
+    if len(colour_lines) > 1:
         ty -= line_step
-    ty -= line_step
-
     ty -= line_step
 
     desc_lines = wrap_text(item.desc, 'Helvetica', field_size, block_w - 20, 2)
@@ -443,7 +448,6 @@ def text_block_bottom_y(item: Item, meta: HeaderMeta, block_w: float, y_top: flo
 def calculate_diagram_scale(
     items: List[Item],
     diagrams: Dict[int, Path],
-    meta: HeaderMeta,
     block_w: float,
     block_h: float,
     top_margin: float,
@@ -464,10 +468,9 @@ def calculate_diagram_scale(
         pos = idx % (cols * rows)
         row = pos // cols
         y_top = ph - top_margin - header_space - row * (block_h + row_gap)
-        ty = text_block_bottom_y(item, meta, block_w, y_top, field_size, line_step)
+        ty = text_block_bottom_y(item, block_w, y_top, field_size, line_step)
         block_bottom = y_top - block_h
-        printed_y = block_bottom + 6
-        zone_bottom = printed_y + 7
+        zone_bottom = block_bottom + 2
         zone_top = ty - 4
         max_img_h = max(zone_top - zone_bottom, 10)
         max_img_w = block_w - 2
@@ -494,10 +497,12 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
     block_h = (ph - top_margin - bottom_margin - header_space - row_gap * (rows - 1)) / rows
     field_size = 6.4
     line_step = 6.8
+    base_diagram_down_shift = 3 * mm
+    green_gap_reduction = 13 * mm
+    yellow_gap_reduction = 14 * mm
     diagram_scale = calculate_diagram_scale(
         items,
         diagrams,
-        meta,
         block_w,
         block_h,
         top_margin,
@@ -518,47 +523,64 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         col = pos % cols
         x = left_margin + col * (block_w + col_gap)
         y_top = ph - top_margin - header_space - row * (block_h + row_gap)
+        text_down_shift = yellow_gap_reduction + (green_gap_reduction if row == 0 else 0)
+        row_diagram_down_shift = yellow_gap_reduction if row == 0 else 0
         if pos == 0:
             header_font = 'Helvetica-Bold'
-            header_size = 9
+            header_size = 9 * 1.3
+            quote_size = header_size * 3
+            header_up_shift = 12.5 * mm
+            header_y = ph - top_margin - 2 - green_gap_reduction - yellow_gap_reduction + header_up_shift
             c.setFont(header_font, header_size)
-            header_text = f'Qte#: {meta.quote_no}'
+            quote_label = 'Qte#: '
+            c.drawString(left_margin, header_y, quote_label)
+            quote_x = left_margin + pdfmetrics.stringWidth(quote_label, header_font, header_size)
+            c.setFont(header_font, quote_size)
+            c.drawString(quote_x, header_y, meta.quote_no)
+            header_end_x = quote_x + pdfmetrics.stringWidth(meta.quote_no, header_font, quote_size)
             if meta.number_of_units:
-                header_text += f'    Number of units: {meta.number_of_units}'
-            c.drawString(left_margin, ph - top_margin - 2, header_text)
+                units_text = f'Number of units: {meta.number_of_units}'
+                units_x = header_end_x + 4 * mm
+                c.setFont(header_font, header_size)
+                c.drawString(units_x, header_y, units_text)
+                header_end_x = units_x + pdfmetrics.stringWidth(units_text, header_font, header_size)
             company_gap = pdfmetrics.stringWidth('abcde', header_font, header_size)
-            company_x = left_margin + pdfmetrics.stringWidth(header_text, header_font, header_size) + company_gap
-            job_x = left_margin + 470
+            company_x = header_end_x + company_gap
+            job_description = meta.job_description or meta.title
+            right_edge = pw - right_margin
+            job_gap = 5 * mm
+            available_job_width = right_edge - company_x - job_gap
+            job_text = fit_text_width(job_description, header_font, header_size, min(60 * mm, available_job_width)) if job_description else ''
+            job_width = pdfmetrics.stringWidth(job_text, header_font, header_size)
+            company_width = pdfmetrics.stringWidth(meta.company_name, header_font, header_size) if meta.company_name else 0
+            job_x = min(company_x + company_width + job_gap, right_edge - job_width)
+            c.setFont(header_font, header_size)
             if meta.company_name:
                 c.drawString(
                     company_x,
-                    ph - top_margin - 2,
-                    fit_text_width(meta.company_name, header_font, header_size, job_x - company_x - 10),
+                    header_y,
+                    fit_text_width(meta.company_name, header_font, header_size, job_x - company_x - job_gap),
                 )
-            job_description = meta.job_description or meta.title
-            if job_description:
+            if job_text:
                 c.drawString(
                     job_x,
-                    ph - top_margin - 2,
-                    fit_text_width(job_description, header_font, header_size, pw - right_margin - job_x),
+                    header_y,
+                    job_text,
                 )
         # origin top-left concept
-        ty = y_top - 7
+        ty = y_top - text_down_shift - 7
 
         # text block
-        # first line qte
-        draw_field(c, x, ty, 'Qte#:', meta.quote_no, block_w, size=field_size)
-        ty -= line_step
-        title_lines = wrap_text(meta.title, 'Helvetica', field_size, block_w - 18, 2)
-        c.setFont('Helvetica-Bold', field_size)
-        c.drawString(x, ty, 'Title:')
-        c.setFont('Helvetica', field_size)
-        c.drawString(x + pdfmetrics.stringWidth('Title:', 'Helvetica-Bold', field_size) + 1, ty, title_lines[0])
-        if len(title_lines) > 1:
-            ty -= line_step
-            c.drawString(x + 10, ty, title_lines[1])
-        ty -= line_step
         draw_field(c, x, ty, 'Item:', str(item.no), block_w, size=field_size)
+        ty -= line_step
+        colour_lines = wrap_text(item.colour, 'Helvetica', field_size, block_w - 24, 2)
+        c.setFont('Helvetica-Bold', field_size)
+        c.drawString(x, ty, 'Colour:')
+        c.setFont('Helvetica', field_size)
+        c.drawString(x + pdfmetrics.stringWidth('Colour:', 'Helvetica-Bold', field_size) + 1, ty, colour_lines[0])
+        if len(colour_lines) > 1:
+            ty -= line_step
+            c.drawString(x + 10, ty, colour_lines[1])
         ty -= line_step
         desc_lines = wrap_text(item.desc, 'Helvetica', field_size, block_w - 20, 2)
         c.setFont('Helvetica-Bold', field_size)
@@ -595,9 +617,9 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
         # diagram zone: place directly under the text block to reduce blank space
         img_path = diagrams.get(item.no)
         block_bottom = y_top - block_h
-        printed_y = block_bottom + 6
-        zone_bottom = printed_y + 7
-        zone_top = ty - 4
+        zone_bottom = block_bottom + 2
+        diagram_layout_ty = text_block_bottom_y(item, block_w, y_top, field_size, line_step)
+        zone_top = diagram_layout_ty - 4
         max_img_h = max(zone_top - zone_bottom, 10)
         max_img_w = block_w - 2
         if img_path and img_path.exists():
@@ -607,11 +629,9 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
             draw_scale = min(diagram_scale, local_scale)
             draw_w, draw_h = img_w * draw_scale, img_h * draw_scale
             ix = x + (block_w - draw_w) / 2
-            iy = zone_bottom + max((max_img_h - draw_h) / 2, 0)
+            centered_iy = zone_bottom + max((max_img_h - draw_h) / 2, 0)
+            iy = max(zone_bottom, centered_iy - base_diagram_down_shift) - row_diagram_down_shift
             c.drawImage(ImageReader(str(img_path)), ix, iy, width=draw_w, height=draw_h, preserveAspectRatio=True, mask='auto')
-        # printed line
-        c.setFont('Helvetica', 4.7)
-        c.drawString(x + 1, printed_y, f'Printed on:{meta.printed}')
 
         if pos == cols * rows - 1 and idx != len(items) - 1:
             c.showPage()
