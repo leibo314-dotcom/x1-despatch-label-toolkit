@@ -25,6 +25,37 @@ body {
     linear-gradient(135deg, #efe7d8 0%, #f7f3ec 45%, #e8efe9 100%);
 }
 
+.test-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 9px 20px;
+  color: #fff;
+  background: linear-gradient(90deg, #8f2d1f, #b84a27);
+  box-shadow: 0 8px 28px rgba(79, 24, 16, 0.2);
+  text-align: center;
+}
+
+.test-banner-badge {
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  white-space: nowrap;
+}
+
+.test-banner-copy {
+  font-size: 0.94rem;
+  font-weight: 650;
+}
+
 .shell {
   width: min(920px, calc(100% - 32px));
   margin: 0 auto;
@@ -147,6 +178,17 @@ body {
 }
 
 @media (max-width: 640px) {
+  .test-banner {
+    align-items: center;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 14px;
+  }
+
+  .test-banner-copy {
+    font-size: 0.84rem;
+  }
+
   .shell {
     width: min(100% - 20px, 920px);
     padding-top: 32px;
