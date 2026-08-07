@@ -30,82 +30,9 @@ def get_job_paths(job_id: str) -> dict[str, Path]:
     }
 
 
-def format_item_numbers(item_numbers: list[int]) -> str:
-    numbers = sorted(set(item_numbers))
-    if not numbers:
-        return ""
-
-    ranges: list[str] = []
-    start = previous = numbers[0]
-    for number in numbers[1:]:
-        if number == previous + 1:
-            previous = number
-            continue
-        ranges.append(str(start) if start == previous else f"{start}-{previous}")
-        start = previous = number
-    ranges.append(str(start) if start == previous else f"{start}-{previous}")
-    return ", ".join(ranges)
-
-
-def build_colour_check(items) -> dict:
-    colour_groups: dict[str, dict] = {}
-    missing_items: list[int] = []
-
-    for item in items:
-        colour = " ".join(item.colour.split()).strip()
-        if not colour:
-            missing_items.append(item.no)
-            continue
-
-        key = colour.casefold()
-        group = colour_groups.setdefault(key, {"colour": colour, "items": []})
-        group["items"].append(item.no)
-
-    groups = []
-    for group in colour_groups.values():
-        groups.append({
-            "colour": group["colour"],
-            "items": format_item_numbers(group["items"]),
-        })
-
-    has_mismatch = len(groups) > 1
-    has_missing = bool(missing_items)
-    return {
-        "status": "warning" if has_mismatch or has_missing else "success",
-        "has_mismatch": has_mismatch,
-        "has_missing": has_missing,
-        "item_count": len(items),
-        "colour_count": len(groups),
-        "groups": groups,
-        "missing_items": format_item_numbers(missing_items),
-    }
-
-
 @app.get("/")
 def index():
     return render_template("index.html")
-
-
-@app.get("/colour-warning-demo")
-def colour_warning_demo():
-    return render_template(
-        "result.html",
-        job_id=None,
-        source_name="Colour warning preview",
-        demo_mode=True,
-        colour_check={
-            "status": "warning",
-            "has_mismatch": True,
-            "has_missing": False,
-            "item_count": 13,
-            "colour_count": 2,
-            "groups": [
-                {"colour": "AEONOX Flaxpod", "items": "1-12"},
-                {"colour": "Matt Black", "items": "13"},
-            ],
-            "missing_items": "",
-        },
-    )
 
 
 @app.post("/generate")
@@ -145,20 +72,10 @@ def result(job_id: str):
         return redirect(url_for("index"))
 
     source_name = request.args.get("source_name", "Uploaded PDF")
-    colour_check = None
-    try:
-        from x1_despatch_label_real_diagram import parse_items
-
-        colour_check = build_colour_check(parse_items(paths["input_path"]))
-    except Exception:
-        # Label generation has already succeeded, so a secondary colour check
-        # must not prevent the user from downloading the PDF.
-        colour_check = None
     return render_template(
         "result.html",
         job_id=job_id,
         source_name=source_name,
-        colour_check=colour_check,
     )
 
 
