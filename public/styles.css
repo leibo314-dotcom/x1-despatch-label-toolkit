@@ -73,10 +73,10 @@ body::before {
   gap: 10px;
   min-height: 42px;
   padding: 7px 20px;
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(17, 19, 25, 0.92);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(21, 24, 31, 0.14);
+  color: #fff;
+  background: linear-gradient(90deg, rgba(186, 25, 34, 0.97), rgba(225, 50, 56, 0.97), rgba(186, 25, 34, 0.97));
+  border-bottom: 1px solid rgba(120, 0, 8, 0.18);
+  box-shadow: 0 10px 30px rgba(151, 14, 23, 0.24);
   backdrop-filter: blur(18px) saturate(140%);
   text-align: center;
 }
@@ -86,9 +86,9 @@ body::before {
   align-items: center;
   gap: 7px;
   padding: 4px 9px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(102, 0, 8, 0.18);
   font-size: 0.68rem;
   font-weight: 720;
   letter-spacing: 0.12em;
@@ -99,8 +99,8 @@ body::before {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #ff9f0a;
-  box-shadow: 0 0 12px rgba(255, 159, 10, 0.8);
+  background: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.85);
   content: "";
 }
 
@@ -122,44 +122,6 @@ body::before {
   flex-direction: column;
   margin-bottom: 38px;
   text-align: center;
-}
-
-.app-icon {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 74px;
-  height: 74px;
-  margin-bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 22px;
-  background: linear-gradient(145deg, #2685ff 0%, #5f67fa 55%, #8559ff 100%);
-  box-shadow: 0 20px 42px rgba(55, 101, 235, 0.3), inset 0 1px rgba(255, 255, 255, 0.45);
-}
-
-.app-icon::before,
-.app-icon::after,
-.app-icon span {
-  position: absolute;
-  display: block;
-  content: "";
-}
-
-.app-icon::before {
-  width: 30px;
-  height: 36px;
-  border: 2px solid rgba(255, 255, 255, 0.92);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.app-icon::after {
-  width: 14px;
-  height: 2px;
-  margin-top: -10px;
-  border-radius: 2px;
-  background: #fff;
-  box-shadow: 0 7px #fff, 0 14px #fff;
 }
 
 .eyebrow {
@@ -191,11 +153,12 @@ body::before {
 .card {
   position: relative;
   overflow: hidden;
-  background: var(--panel);
-  border: 1px solid rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.92);
   border-radius: 32px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(28px) saturate(150%);
+  backdrop-filter: blur(38px) saturate(165%);
+  -webkit-backdrop-filter: blur(38px) saturate(165%);
   padding: 32px;
 }
 
@@ -230,28 +193,6 @@ body::before {
   letter-spacing: -0.035em;
 }
 
-.privacy-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 12px;
-  border: 1px solid rgba(35, 172, 111, 0.16);
-  border-radius: 999px;
-  color: #187849;
-  background: rgba(226, 249, 237, 0.72);
-  font-size: 0.76rem;
-  font-weight: 650;
-  white-space: nowrap;
-}
-
-.privacy-pill i {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #22b36b;
-  box-shadow: 0 0 0 4px rgba(34, 179, 107, 0.12);
-}
-
 .upload-form {
   display: grid;
   gap: 18px;
@@ -266,8 +207,10 @@ body::before {
   border: 1px solid rgba(67, 89, 134, 0.14);
   border-radius: 24px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 255, 0.76));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(244, 248, 255, 0.42));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92), 0 16px 42px rgba(67, 86, 132, 0.07);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
   cursor: pointer;
   text-align: center;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
@@ -483,12 +426,6 @@ body::before {
     margin-bottom: 28px;
   }
 
-  .app-icon {
-    width: 62px;
-    height: 62px;
-    border-radius: 19px;
-  }
-
   .hero h1 {
     font-size: clamp(2.55rem, 13vw, 4rem);
   }
@@ -502,10 +439,6 @@ body::before {
   .form-footer {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .privacy-pill {
-    width: fit-content;
   }
 
   .dropzone {
