@@ -150,6 +150,35 @@ body {
   transform: translateY(-1px);
 }
 
+.primary-btn:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  transform: none;
+}
+
+.upload-status {
+  display: grid;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.upload-status[hidden] {
+  display: none;
+}
+
+.upload-status-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.upload-status progress {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--accent);
+}
+
 .secondary-link {
   color: var(--accent);
   font-weight: 600;

@@ -4,3 +4,4 @@ pdfplumber
 pillow
 reportlab
 pymupdf
+vercel>=0.8.1,<1

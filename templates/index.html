@@ -32,16 +32,34 @@
     {% endwith %}
 
     <section class="card">
-      <form class="upload-form" action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
+      <form
+        class="upload-form"
+        action="{{ url_for('generate') }}"
+        method="post"
+        enctype="multipart/form-data"
+        data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}"
+      >
         <label class="dropzone" for="pdf_file">
           <span class="dropzone-title">Choose PDF</span>
-          <span class="dropzone-copy">X1 Schedule and Assembly (Detail) PDFs are supported.</span>
+          <span class="dropzone-copy">
+            X1 Schedule and Assembly (Detail) PDFs are supported, up to {{ max_upload_mb }} MB.
+          </span>
           <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
         </label>
         <button class="primary-btn" type="submit">Generate PDF</button>
+        <section class="upload-status" aria-live="polite" hidden>
+          <div class="upload-status-row">
+            <span data-upload-status>Preparing upload...</span>
+            <span data-upload-percent></span>
+          </div>
+          <progress data-upload-progress max="100" value="0"></progress>
+        </section>
       </form>
     </section>
 
   </main>
+  {% if blob_upload_enabled %}
+    <script type="module" src="/upload.js"></script>
+  {% endif %}
 </body>
 </html>

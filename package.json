@@ -1,0 +1,14 @@
+{
+  "name": "x1-despatch-label-toolkit-preview",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:upload": "esbuild src/upload.js --bundle --minify --outfile=public/upload.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "2.7.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.8"
+  }
+}
