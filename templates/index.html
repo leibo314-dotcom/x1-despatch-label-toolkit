@@ -42,7 +42,7 @@
         data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}"
       >
         <label class="file-picker" for="pdf_file">
-          <span class="file-picker-name" data-file-name>Choose PDF</span>
+          <span class="file-picker-name" data-file-name>Choose PDF or drop it here</span>
           <span class="file-picker-icon" aria-hidden="true"></span>
           <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
         </label>
@@ -72,9 +72,58 @@
   {% endif %}
   <script>
     const pdfInput = document.querySelector('#pdf_file');
+    const filePicker = document.querySelector('.file-picker');
     const fileName = document.querySelector('[data-file-name]');
+    const emptyPrompt = 'Choose PDF or drop it here';
+
     pdfInput?.addEventListener('change', () => {
-      fileName.textContent = pdfInput.files?.[0]?.name || 'Choose PDF';
+      filePicker.classList.remove('is-invalid');
+      fileName.textContent = pdfInput.files?.[0]?.name || emptyPrompt;
+    });
+
+    let dragDepth = 0;
+
+    filePicker?.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth += 1;
+      filePicker.classList.add('is-dragging');
+      filePicker.classList.remove('is-invalid');
+      fileName.textContent = 'Drop PDF here';
+    });
+
+    filePicker?.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+
+    filePicker?.addEventListener('dragleave', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) {
+        filePicker.classList.remove('is-dragging');
+        fileName.textContent = pdfInput.files?.[0]?.name || emptyPrompt;
+      }
+    });
+
+    filePicker?.addEventListener('drop', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth = 0;
+      filePicker.classList.remove('is-dragging');
+      const file = event.dataTransfer?.files?.[0];
+      if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+        pdfInput.value = '';
+        filePicker.classList.add('is-invalid');
+        fileName.textContent = 'Please drop a PDF file';
+        return;
+      }
+
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      pdfInput.files = transfer.files;
+      pdfInput.dispatchEvent(new Event('change', { bubbles: true }));
     });
   </script>
 </body>

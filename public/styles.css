@@ -159,6 +159,26 @@ body {
   background: rgba(255, 255, 255, 0.56);
 }
 
+.file-picker.is-dragging {
+  border-color: rgba(125, 15, 46, 0.78);
+  background: rgba(138, 20, 53, 0.08);
+  outline: 3px solid rgba(138, 20, 53, 0.08);
+}
+
+.file-picker.is-dragging .file-picker-name,
+.file-picker.is-dragging .file-picker-icon {
+  color: var(--accent);
+}
+
+.file-picker.is-invalid {
+  border-color: rgba(154, 41, 35, 0.55);
+  background: rgba(255, 235, 232, 0.5);
+}
+
+.file-picker.is-invalid .file-picker-name {
+  color: var(--error-text);
+}
+
 .file-picker-name {
   max-width: calc(100% - 76px);
   overflow: hidden;
