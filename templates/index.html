@@ -7,8 +7,6 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div class="ambient ambient-one" aria-hidden="true"></div>
-  <div class="ambient ambient-two" aria-hidden="true"></div>
   <aside class="test-banner" aria-label="Test environment notice">
     <span class="test-banner-badge">TEST ENVIRONMENT</span>
     <span class="test-banner-copy">For testing only - this is not the live website.</span>
@@ -16,7 +14,7 @@
   <main class="shell">
     <section class="hero">
       <p class="eyebrow">X1 Label Toolkit</p>
-      <h1>Documents in.<br><span>Delivery PDFs out.</span></h1>
+      <h1>Generate despatch labels<br>from an X1 Schedule or Assembly PDF.</h1>
     </section>
 
     {% with messages = get_flashed_messages() %}
@@ -43,21 +41,21 @@
         enctype="multipart/form-data"
         data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}"
       >
-        <label class="dropzone" for="pdf_file">
-          <span class="upload-symbol" aria-hidden="true"><i></i></span>
-          <span class="dropzone-title">Choose PDF</span>
-          <span class="dropzone-copy">
-            X1 Schedule and Assembly (Detail) PDFs are supported, up to {{ max_upload_mb }} MB.
-          </span>
+        <label class="file-picker" for="pdf_file">
+          <span class="file-picker-name" data-file-name>Choose PDF</span>
+          <span class="file-picker-icon" aria-hidden="true"></span>
           <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
         </label>
+        <p class="dropzone-copy">
+          X1 Schedule and Assembly (Detail) PDFs are supported, up to {{ max_upload_mb }} MB.
+        </p>
         <div class="form-footer">
           <div class="format-list" aria-label="Supported document types">
-            <span>Schedule</span>
-            <span>Assembly (Detail)</span>
-            <span>{{ max_upload_mb }} MB max</span>
+            <span><b class="format-icon format-icon-schedule" aria-hidden="true"></b>Schedule</span>
+            <span><b class="format-icon format-icon-assembly" aria-hidden="true"></b>Assembly (Detail)</span>
+            <span><b class="format-icon format-icon-file" aria-hidden="true"></b>{{ max_upload_mb }} MB max</span>
           </div>
-          <button class="primary-btn" type="submit">Generate PDF <span aria-hidden="true">→</span></button>
+          <button class="primary-btn" type="submit">Generate PDF</button>
         </div>
         <section class="upload-status" aria-live="polite" hidden>
           <div class="upload-status-row">
@@ -68,10 +66,16 @@
         </section>
       </form>
     </section>
-
   </main>
   {% if blob_upload_enabled %}
     <script type="module" src="/upload.js"></script>
   {% endif %}
+  <script>
+    const pdfInput = document.querySelector('#pdf_file');
+    const fileName = document.querySelector('[data-file-name]');
+    pdfInput?.addEventListener('change', () => {
+      fileName.textContent = pdfInput.files?.[0]?.name || 'Choose PDF';
+    });
+  </script>
 </body>
 </html>

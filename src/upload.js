@@ -36,7 +36,7 @@ function showStatus(message, percentage = null) {
 
 function restoreForm(message) {
   submitButton.disabled = false;
-  submitButton.innerHTML = 'Generate PDF <span aria-hidden="true">→</span>';
+  submitButton.textContent = "Generate PDF";
   showStatus(message, 0);
 }
 

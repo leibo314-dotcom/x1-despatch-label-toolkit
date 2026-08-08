@@ -7,7 +7,7 @@ from pathlib import Path
 from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__, template_folder="templates", static_folder=None)
+app = Flask(__name__, template_folder="templates", static_folder="public", static_url_path="")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "x1-despatch-label-local")
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
