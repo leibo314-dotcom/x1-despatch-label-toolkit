@@ -211,7 +211,10 @@ def parse_assembly_job_description(words: List[dict], page_width: float, page_he
         text = line_text(line)
         if abs(line_center - center_x) > page_width * 0.12:
             continue
-        if not re.fullmatch(r"[A-Z][A-Z0-9 &'-]*", text):
+        if not (
+            re.fullmatch(r"[A-Z][A-Z0-9 &'-]*", text)
+            or looks_like_address(text)
+        ):
             continue
         candidates.append((abs(line_center - center_x) + top, text))
     return min(candidates)[1] if candidates else ""
