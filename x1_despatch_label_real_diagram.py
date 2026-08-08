@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import re
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -166,7 +167,58 @@ def parse_number_of_units(text: str) -> str:
     return m.group(1) if m else ""
 
 
-def parse_items(pdf_path: Path) -> List[Item]:
+def detect_document_type(pdf_path: Path) -> str:
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        if not pdf.pages:
+            raise ValueError("The uploaded PDF has no pages.")
+        first_page_text = pdf.pages[0].extract_text() or ""
+
+    if re.search(r"Assembly\s+(?:Medium\s+)?Drawing", first_page_text, re.IGNORECASE):
+        return "assembly"
+    if re.search(r"(?:^|\n)\s*Schedule(?:\s|$)", first_page_text, re.IGNORECASE):
+        return "schedule"
+    raise ValueError("Unsupported PDF. Upload an X1 Schedule or Assembly (Detail) PDF.")
+
+
+def parse_assembly_company_name(words: List[dict], page_width: float, page_height: float) -> str:
+    candidates = []
+    left_words = [word for word in words if word["x1"] < page_width * 0.48]
+    for line in group_words_by_line(left_words):
+        if not line:
+            continue
+        top = min(word["top"] for word in line)
+        x0 = min(word["x0"] for word in line)
+        if top > page_height * 0.10 or x0 > page_width * 0.12:
+            continue
+        text = line_text(line)
+        if text:
+            candidates.append((top, text))
+    return min(candidates)[1] if candidates else ""
+
+
+def parse_assembly_job_description(words: List[dict], page_width: float, page_height: float) -> str:
+    center_x = page_width / 2
+    candidates = []
+    for line in group_words_by_line(words):
+        if not line:
+            continue
+        top = min(word["top"] for word in line)
+        if top > page_height * 0.14:
+            continue
+        x0 = min(word["x0"] for word in line)
+        x1 = max(word["x1"] for word in line)
+        line_center = (x0 + x1) / 2
+        text = line_text(line)
+        if abs(line_center - center_x) > page_width * 0.12:
+            continue
+        if not re.fullmatch(r"[A-Z][A-Z0-9 &'-]*", text):
+            continue
+        candidates.append((abs(line_center - center_x) + top, text))
+    return min(candidates)[1] if candidates else ""
+
+
+def parse_items(pdf_path: Path, document_type: str | None = None) -> List[Item]:
+    document_type = document_type or detect_document_type(pdf_path)
     items: List[Item] = []
     with pdfplumber.open(str(pdf_path)) as pdf:
         for page_index, page in enumerate(pdf.pages):
@@ -285,7 +337,66 @@ def trim_diagram(crop: Image.Image) -> Image.Image:
     return crop2.crop((x0, y0, x1, y1))
 
 
-def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> Dict[int, Path]:
+def extract_assembly_diagram(doc: fitz.Document, page_index: int) -> Image.Image:
+    page = doc.load_page(page_index)
+    candidates = []
+    for image_info in page.get_images(full=True):
+        image_data = doc.extract_image(image_info[0])
+        if image_data["width"] >= 500 and image_data["height"] >= 400:
+            candidates.append(image_data)
+    if not candidates:
+        raise ValueError(f"Could not locate the assembly drawing on page {page_index + 1}.")
+
+    image_data = max(candidates, key=lambda data: data["width"] * data["height"])
+    source = Image.open(BytesIO(image_data["image"])).convert("RGB")
+
+    import numpy as np
+
+    grayscale = np.array(source.convert("L"))
+    coordinates = np.argwhere(grayscale < 245)
+    if not len(coordinates):
+        raise ValueError(f"The assembly drawing on page {page_index + 1} is blank.")
+    y0, x0 = coordinates.min(axis=0)
+    y1, x1 = coordinates.max(axis=0)
+    content = source.crop((int(x0), int(y0), int(x1) + 1, int(y1) + 1))
+
+    # Schedule reports place their diagram in a 250 x 203 image. Assembly
+    # reports contain the same drawing in a larger 720 x 660 image. Normalize
+    # the Assembly image to the Schedule canvas before the existing label
+    # layout code sees it.
+    target_width, target_height = 237, 203
+    scale = min(target_width / content.width, target_height / content.height)
+    normalized_size = (
+        max(1, round(content.width * scale)),
+        max(1, round(content.height * scale)),
+    )
+    content = content.resize(normalized_size, Image.Resampling.LANCZOS)
+    schedule_canvas = Image.new("RGB", (250, 203), "white")
+    schedule_canvas.paste(
+        content,
+        (
+            (schedule_canvas.width - content.width) // 2,
+            (schedule_canvas.height - content.height) // 2,
+        ),
+    )
+
+    # Reproduce the raster dimensions used when the Schedule image is drawn
+    # on an X1 page and rendered at the generator's normal DPI.
+    rendered = schedule_canvas.resize(
+        (round(187.5 * DPI / 72), round(152.25 * DPI / 72)),
+        Image.Resampling.BICUBIC,
+    )
+    padded = Image.new("RGB", (rendered.width + 80, rendered.height + 80), "white")
+    padded.paste(rendered, (40, 40))
+    return trim_diagram(padded)
+
+
+def extract_diagram_images(
+    pdf_path: Path,
+    items: List[Item],
+    out_dir: Path,
+    document_type: str = "schedule",
+) -> Dict[int, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     with pdfplumber.open(str(pdf_path)) as pdf, fitz.open(str(pdf_path)) as doc:
         scale = DPI / 72.0
@@ -296,6 +407,13 @@ def extract_diagram_images(pdf_path: Path, items: List[Item], out_dir: Path) -> 
         for pidx, page in enumerate(pdf.pages):
             if pidx not in page_items:
                 continue
+            if document_type == "assembly":
+                for item in page_items[pidx]:
+                    out_path = out_dir / f"diagram_{item.no}.png"
+                    extract_assembly_diagram(doc, item.page_index).save(out_path)
+                    result[item.no] = out_path
+                continue
+
             fpage = doc.load_page(pidx)
             pix = fpage.get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
@@ -642,7 +760,10 @@ def make_pdf(items: List[Item], diagrams: Dict[int, Path], out_path: Path, meta:
 def generate_despatch_label(input_path: Path, output_path: Path, workdir: Path) -> Path:
     workdir.mkdir(parents=True, exist_ok=True)
 
-    items = parse_items(input_path)
+    document_type = detect_document_type(input_path)
+    items = parse_items(input_path, document_type)
+    if not items:
+        raise ValueError("No physical units were found in the uploaded PDF.")
     with pdfplumber.open(str(input_path)) as pdf:
         first_page = pdf.pages[0]
         first_text = first_page.extract_text() or ''
@@ -652,16 +773,21 @@ def generate_despatch_label(input_path: Path, output_path: Path, workdir: Path) 
         job_name = parse_job_name_from_position(first_words, first_page.width, first_page.height)
         full_text = "\n".join(page.extract_text() or "" for page in pdf.pages)
     meta = parse_header_meta(first_text)
-    if company_name:
-        meta.company_name = company_name
-    if job_name:
-        meta.title = job_name
-    if job_description:
-        meta.job_description = job_description
-    elif meta.title:
-        meta.job_description = meta.title
-    meta.number_of_units = parse_number_of_units(full_text)
-    diagrams = extract_diagram_images(input_path, items, workdir / 'diagrams')
+    if document_type == "assembly":
+        meta.company_name = parse_assembly_company_name(first_words, first_page.width, first_page.height)
+        meta.job_description = parse_assembly_job_description(first_words, first_page.width, first_page.height)
+        meta.number_of_units = str(len(items))
+    else:
+        if company_name:
+            meta.company_name = company_name
+        if job_name:
+            meta.title = job_name
+        if job_description:
+            meta.job_description = job_description
+        elif meta.title:
+            meta.job_description = meta.title
+        meta.number_of_units = parse_number_of_units(full_text)
+    diagrams = extract_diagram_images(input_path, items, workdir / 'diagrams', document_type)
     make_pdf(items, diagrams, output_path, meta)
     return output_path
 

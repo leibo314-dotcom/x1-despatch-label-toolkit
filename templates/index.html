@@ -14,7 +14,7 @@
   <main class="shell">
     <section class="hero">
       <p class="eyebrow">X1 Label Toolkit</p>
-      <h1>Generate despatch labels from an X1 Quote Schedule PDF.</h1>
+      <h1>Generate despatch labels from an X1 Schedule or Assembly PDF.</h1>
       <p class="lede">
         Upload the quote schedule, let the app rebuild the labels, then download the new PDF.
         This web version removes TWT and size text, and shows the site address once at the top.
@@ -35,7 +35,7 @@
       <form class="upload-form" action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
         <label class="dropzone" for="pdf_file">
           <span class="dropzone-title">Choose PDF</span>
-          <span class="dropzone-copy">Only X1 Quote Schedule style PDFs are supported.</span>
+          <span class="dropzone-copy">X1 Schedule and Assembly (Detail) PDFs are supported.</span>
           <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
         </label>
         <button class="primary-btn" type="submit">Generate PDF</button>
