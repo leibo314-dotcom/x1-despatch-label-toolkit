@@ -41,6 +41,83 @@ def generate_job(paths: dict[str, Path]) -> None:
     generate_despatch_label(paths["input_path"], paths["output_path"], paths["workdir"])
 
 
+def _profile_lengths(item_text: str, profile: str) -> list[float]:
+    """Return plausible cut lengths from rows containing a profile code."""
+    lengths: list[float] = []
+    for line in item_text.splitlines():
+        if not re.search(rf"\b{re.escape(profile)}\b", line, re.IGNORECASE):
+            continue
+
+        # Prefer an explicitly labelled Length value when the export includes it.
+        labelled = re.search(
+            r"\bLength\s*[:=]?\s*(\d+(?:\.\d+)?)\b", line, re.IGNORECASE
+        )
+        if labelled:
+            lengths.append(float(labelled.group(1)))
+            continue
+
+        after_code = re.split(rf"\b{re.escape(profile)}\b", line, maxsplit=1, flags=re.IGNORECASE)[-1]
+        values = [
+            float(value)
+            for value in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?(?![A-Za-z])", after_code)
+            if float(value) >= 100
+        ]
+        if values:
+            # Length is the dominant millimetre measurement; this also avoids
+            # quantities and common 45/90-degree cut-angle columns.
+            lengths.append(max(values))
+    return lengths
+
+
+def build_hinged_door_check(pdf_path: Path, source_name: str) -> dict | None:
+    """Validate V661 against the shorter V650 in Assembly hinged-door items."""
+    import pdfplumber
+
+    with pdfplumber.open(str(pdf_path)) as pdf:
+        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+
+    if "assembly" not in source_name.casefold() and not re.search(
+        r"\bAssembly\b", text, re.IGNORECASE
+    ):
+        return None
+
+    item_matches = list(re.finditer(r"(?m)^\s*#\s*(\d+)\b", text))
+    problems = []
+    checked_items = []
+    for index, match in enumerate(item_matches):
+        item_no = int(match.group(1))
+        end = item_matches[index + 1].start() if index + 1 < len(item_matches) else len(text)
+        item_text = text[match.start():end]
+        frame_match = re.search(r"(?mi)^\s*Frame\s*:\s*([^\n]+)", item_text)
+        frame = frame_match.group(1).strip() if frame_match else ""
+        if not re.search(r"\bHinged\s+(?:Dr|Door)\b", frame, re.IGNORECASE):
+            continue
+
+        checked_items.append(item_no)
+        v661_values = _profile_lengths(item_text, "V661")
+        v650_values = _profile_lengths(item_text, "V650")
+        v661 = v661_values[0] if v661_values else None
+        shorter_v650 = min(v650_values) if v650_values else None
+        difference = (
+            abs(v661 - shorter_v650)
+            if v661 is not None and shorter_v650 is not None
+            else None
+        )
+        if difference is None or abs(difference - 240) > 0.01:
+            problems.append({
+                "item": item_no,
+                "v661": v661,
+                "v650": shorter_v650,
+                "difference": difference,
+            })
+
+    return {
+        "status": "warning" if problems else "success",
+        "checked_items": ", ".join(str(item) for item in checked_items),
+        "problems": problems,
+    }
+
+
 @app.get("/")
 def index():
     return render_template(
@@ -136,10 +213,18 @@ def result(job_id: str):
         return redirect(url_for("index"))
 
     source_name = request.args.get("source_name", "Uploaded PDF")
+    hinged_door_check = None
+    try:
+        hinged_door_check = build_hinged_door_check(paths["input_path"], source_name)
+    except Exception:
+        # This is an additional quality check and must not block a successful
+        # label generation or download.
+        hinged_door_check = None
     return render_template(
         "result.html",
         job_id=job_id,
         source_name=source_name,
+        hinged_door_check=hinged_door_check,
     )
 
 

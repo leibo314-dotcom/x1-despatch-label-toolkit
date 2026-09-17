@@ -14,6 +14,45 @@
       <p class="lede">Source file: {{ source_name }}</p>
     </section>
 
+    {% if hinged_door_check %}
+      {% if hinged_door_check.status == "warning" %}
+        <section class="validation-alert error" role="alert">
+          <div class="validation-alert-heading">
+            <div>
+              <p class="alert-kicker">Assembly check failed</p>
+              <h2>Hinged door frame length error</h2>
+            </div>
+            <span class="alert-badge">Check before dispatch</span>
+          </div>
+          <p>For a Hinged Door Frame, the difference between V661 and the shorter V650 must be 240 mm.</p>
+          <div class="validation-groups">
+            {% for problem in hinged_door_check.problems %}
+              <div class="validation-group">
+                <strong>Item {{ problem.item }}</strong>
+                {% if problem.difference is not none %}
+                  <span>V661: {{ '%g'|format(problem.v661) }} mm</span>
+                  <span>Shorter V650: {{ '%g'|format(problem.v650) }} mm</span>
+                  <span>Difference: {{ '%g'|format(problem.difference) }} mm (required: 240 mm)</span>
+                {% else %}
+                  <span>Could not read both V661 and V650 lengths. Please check this item manually.</span>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+      {% elif hinged_door_check.checked_items %}
+        <section class="validation-alert success" aria-live="polite">
+          <div class="validation-alert-heading">
+            <div>
+              <p class="alert-kicker">Assembly check passed</p>
+              <h2>Hinged door frame lengths are correct</h2>
+            </div>
+            <span class="alert-badge">240 mm confirmed</span>
+          </div>
+          <p>Checked Item {{ hinged_door_check.checked_items }}.</p>
+        </section>
+      {% endif %}
+    {% endif %}
     <section class="card result-card">
       <a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a>
       <a class="secondary-link" href="{{ url_for('index') }}">Generate another file</a>
