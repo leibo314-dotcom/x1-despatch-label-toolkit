@@ -70,7 +70,7 @@ def _profile_lengths(item_text: str, profile: str) -> list[float]:
 
 
 def build_hinged_door_check(pdf_path: Path, source_name: str) -> dict | None:
-    """Validate V661 against the shorter V650 in Assembly hinged-door items."""
+    """Validate V661 against the shorter V650/V651 in Assembly hinged-door items."""
     import pdfplumber
 
     with pdfplumber.open(str(pdf_path)) as pdf:
@@ -95,19 +95,28 @@ def build_hinged_door_check(pdf_path: Path, source_name: str) -> dict | None:
 
         checked_items.append(item_no)
         v661_values = _profile_lengths(item_text, "V661")
-        v650_values = _profile_lengths(item_text, "V650")
+        frame_profile_values = [
+            (profile, length)
+            for profile in ("V650", "V651")
+            for length in _profile_lengths(item_text, profile)
+        ]
         v661 = v661_values[0] if v661_values else None
-        shorter_v650 = min(v650_values) if v650_values else None
+        shorter_profile, shorter_frame_length = (
+            min(frame_profile_values, key=lambda value: value[1])
+            if frame_profile_values
+            else (None, None)
+        )
         difference = (
-            abs(v661 - shorter_v650)
-            if v661 is not None and shorter_v650 is not None
+            abs(v661 - shorter_frame_length)
+            if v661 is not None and shorter_frame_length is not None
             else None
         )
         if difference is None or abs(difference - 240) > 0.01:
             problems.append({
                 "item": item_no,
                 "v661": v661,
-                "v650": shorter_v650,
+                "frame_profile": shorter_profile,
+                "frame_length": shorter_frame_length,
                 "difference": difference,
             })
 

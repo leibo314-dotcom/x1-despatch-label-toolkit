@@ -24,17 +24,17 @@
             </div>
             <span class="alert-badge">Check before dispatch</span>
           </div>
-          <p>For a Hinged Door Frame, the difference between V661 and the shorter V650 must be 240 mm.</p>
+          <p>For a Hinged Door Frame, the difference between V661 and the shorter V650/V651 must be 240 mm.</p>
           <div class="validation-groups">
             {% for problem in hinged_door_check.problems %}
               <div class="validation-group">
                 <strong>Item {{ problem.item }}</strong>
                 {% if problem.difference is not none %}
                   <span>V661: {{ '%g'|format(problem.v661) }} mm</span>
-                  <span>Shorter V650: {{ '%g'|format(problem.v650) }} mm</span>
+                  <span>Shorter {{ problem.frame_profile }}: {{ '%g'|format(problem.frame_length) }} mm</span>
                   <span>Difference: {{ '%g'|format(problem.difference) }} mm (required: 240 mm)</span>
                 {% else %}
-                  <span>Could not read both V661 and V650 lengths. Please check this item manually.</span>
+                  <span>Could not read both V661 and V650/V651 lengths. Please check this item manually.</span>
                 {% endif %}
               </div>
             {% endfor %}
