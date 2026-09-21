@@ -166,27 +166,42 @@ def parse_number_of_units(text: str) -> str:
     return m.group(1) if m else ""
 
 
+def item_heading_words(words: List[dict], page_width: float) -> List[dict]:
+    """Find the leading number in an item heading, not references in prose."""
+    headings = []
+    for word in words:
+        if not re.fullmatch(r"#\d+", word['text']) or word['x0'] < page_width * .30:
+            continue
+        line = [other for other in words if abs(other['top'] - word['top']) < 2]
+        if any(other['x0'] < word['x0'] for other in line):
+            continue
+        # X1 places Quantity directly beneath the boxed item heading.
+        if not any(other['text'] == 'Quantity:'
+                   and 0 < other['top'] - word['top'] < 25
+                   and other['x0'] >= word['x0'] for other in words):
+            continue
+        headings.append(word)
+    return sorted(headings, key=lambda word: word['top'])
+
+
 def parse_items(pdf_path: Path) -> List[Item]:
     items: List[Item] = []
     with pdfplumber.open(str(pdf_path)) as pdf:
         for page_index, page in enumerate(pdf.pages):
             text = page.extract_text() or ""
             words = page.extract_words(x_tolerance=1, y_tolerance=1)
-            headers = [w for w in words if re.fullmatch(r"#\d+", w['text'])]
-            headers = sorted(headers, key=lambda w: w['top'])
+            headers = item_heading_words(words, page.width)
             for i, w in enumerate(headers):
                 start = w['top']
                 end = headers[i + 1]['top'] - 1 if i + 1 < len(headers) else page.height - 8
-                # segment text by location: simple textual split from extracted text
-                # use regex against page text for each item number
                 item_no = int(w['text'][1:])
-                # textual segment from #n to next #m or end of page text
-                pat = re.compile(rf"#\s*{item_no}\s+([^\n]+)(.*?)(?=(?:#\s*\d+\b)|$)", re.S)
-                m = pat.search(text)
-                if not m:
-                    continue
-                desc = clean_desc(m.group(1))
-                seg = m.group(2)
+                heading_words = sorted(
+                    [other for other in words if abs(other['top'] - start) < 2
+                     and other['x0'] >= w['x1']], key=lambda other: other['x0'])
+                desc = clean_desc(' '.join(other['text'] for other in heading_words))
+                # Parse only this heading's physical section. A '#15' inside
+                # descriptions or Sundry notes must not delimit another item.
+                seg = page.crop((0, w['bottom'], page.width, end)).extract_text() or ""
                 colour = ""
                 m_colour = re.search(r"(?:^|\n)\s*Colou?r\s*:\s*([^\n]+)", seg, re.IGNORECASE)
                 if m_colour:
