@@ -1,63 +1,22 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Download Despatch Label</title>
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
-  <main class="shell">
-    <section class="hero">
-      <p class="eyebrow">Ready</p>
-      <h1>Your despatch label PDF is generated.</h1>
-      <p class="lede">Source file: {{ source_name }}</p>
-    </section>
-
-    {% if hinged_door_check %}
-      {% if hinged_door_check.status == "warning" %}
-        <section class="validation-alert error" role="alert">
-          <div class="validation-alert-heading">
-            <div>
-              <p class="alert-kicker">Assembly check failed</p>
-              <h2>Hinged door frame length error</h2>
-            </div>
-            <span class="alert-badge">Check before dispatch</span>
-          </div>
-          <p>For a Hinged Door Frame, the difference between V661 and the shorter V650/V651 must be 240 mm.</p>
-          <div class="validation-groups">
-            {% for problem in hinged_door_check.problems %}
-              <div class="validation-group">
-                <strong>Item {{ problem.item }}</strong>
-                {% if problem.difference is not none %}
-                  <span>V661: {{ '%g'|format(problem.v661) }} mm</span>
-                  <span>Shorter {{ problem.frame_profile }}: {{ '%g'|format(problem.frame_length) }} mm</span>
-                  <span>Difference: {{ '%g'|format(problem.difference) }} mm (required: 240 mm)</span>
-                {% else %}
-                  <span>Could not read both V661 and V650/V651 lengths. Please check this item manually.</span>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        </section>
-      {% elif hinged_door_check.checked_items %}
-        <section class="validation-alert success" aria-live="polite">
-          <div class="validation-alert-heading">
-            <div>
-              <p class="alert-kicker">Assembly check passed</p>
-              <h2>Hinged door frame lengths are correct</h2>
-            </div>
-            <span class="alert-badge">240 mm confirmed</span>
-          </div>
-          <p>Checked Item {{ hinged_door_check.checked_items }}.</p>
-        </section>
-      {% endif %}
-    {% endif %}
-    <section class="card result-card">
-      <a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a>
-      <a class="secondary-link" href="{{ url_for('index') }}">Generate another file</a>
-    </section>
-
-  </main>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FMI — Document tools (Test)</title><link rel="stylesheet" href="/styles.css"></head><body>
+<aside class="test-banner"><span class="test-banner-badge">TEST ENVIRONMENT</span><span class="test-banner-copy">For testing only — this is not the live website.</span></aside>
+<main class="shell" data-job="{{ job_id }}">
+<section class="hero"><p class="eyebrow">FMI document tools</p><h1>One upload. Three independent tools.</h1>
+<p class="lede">{% for input in inputs %}{{ input.name }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+<p>Each tool has its own result and can be retried separately. Download your docket as soon as it is ready.</p></section>
+<noscript><p>Enable JavaScript to run the three tools.</p></noscript><div class="tool-grid">
+{% for key, feature in features.items() %}
+<section class="card tool-card" data-feature="{{ key }}">
+<header class="tool-heading"><h2>{{ feature[0] }}</h2><span class="tool-badge" data-status>Pending</span></header>
+<p data-summary aria-live="polite">Ready to run.</p><details data-evidence hidden><summary>View items needing attention</summary><div data-details></div></details><p class="tool-note" data-note></p>
+<div class="tool-actions"><button class="primary-btn" data-run>Run tool</button>
+<a data-download hidden href="{{ url_for('download', job_id=job_id) }}">Download docket PDF</a>
+<a data-report hidden href="{{ url_for('feature_report', job_id=job_id, feature=key) }}">Download evidence (JSON)</a></div>
+</section>{% endfor %}</div>
+<section class="card job-footer"><a href="/">Upload another quote</a>
+<form method="post" action="{{ url_for('delete_job', job_id=job_id) }}"><button class="secondary-btn" type="submit" data-delete>Delete this upload and its results</button></form>
+<p class="tool-note">Test files are stored privately for retries. Use Delete when you have finished.</p></section></main>
+<script type="application/json" id="initial-results">{{ results|tojson }}</script>
+<script type="module" src="/results.js"></script></body></html>

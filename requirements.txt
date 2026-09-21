@@ -4,4 +4,5 @@ pdfplumber
 pillow
 reportlab
 pymupdf
-vercel>=0.8.1,<1
+vercel==0.11.3
+rapidocr-onnxruntime==1.4.4

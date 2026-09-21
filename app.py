@@ -1,262 +1,144 @@
+import io
 import os
-import re
-import shutil
-import uuid
 from pathlib import Path
-
-from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
+import re
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
+from services.jobs import FEATURES, JobStore, run_feature
 
-app = Flask(__name__, template_folder="templates", static_folder="public", static_url_path="")
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "x1-despatch-label-local")
-app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
-
-TMP_ROOT = Path(os.environ.get("TMPDIR") or os.environ.get("TEMP") or "/tmp")
-JOBS_DIR = TMP_ROOT / "x1_despatch_label_jobs"
-ALLOWED_EXTENSIONS = {".pdf"}
+app = Flask(__name__, template_folder='templates', static_folder='public', static_url_path='')
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'x1-despatch-label-local')
+app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
 MAX_BLOB_UPLOAD_BYTES = 100 * 1024 * 1024
-BLOB_PATH_RE = re.compile(
-    r"^x1-inputs/[0-9a-f]{32}-[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.pdf$"
-)
-JOBS_DIR.mkdir(parents=True, exist_ok=True)
+MAX_FILES = 3
+BLOB_PATH_RE = re.compile(r'^x1-inputs/[0-9a-f]{32}-[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.pdf$')
+store = JobStore(Path(os.environ.get('TMPDIR') or os.environ.get('TEMP') or '/tmp'),
+                 remote=bool(os.environ.get('BLOB_READ_WRITE_TOKEN')))
 
 
-def is_allowed_file(filename: str) -> bool:
-    return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
+def validate_pdf(name, content):
+    if Path(name).suffix.lower() != '.pdf' or not content.startswith(b'%PDF-'):
+        raise ValueError('Only valid PDF files are supported.')
+    if len(content) > MAX_BLOB_UPLOAD_BYTES:
+        raise ValueError('The combined upload limit is 100 MB.')
 
 
-def get_job_paths(job_id: str) -> dict[str, Path]:
-    job_dir = JOBS_DIR / job_id
-    return {
-        "job_dir": job_dir,
-        "input_path": job_dir / "input.pdf",
-        "output_path": job_dir / "despatch_label.pdf",
-        "workdir": job_dir / "work",
-    }
-
-
-def generate_job(paths: dict[str, Path]) -> None:
-    from x1_despatch_label_real_diagram import generate_despatch_label
-
-    generate_despatch_label(paths["input_path"], paths["output_path"], paths["workdir"])
-
-
-def _profile_lengths(item_text: str, profile: str) -> list[float]:
-    """Return plausible cut lengths from rows containing a profile code."""
-    lengths: list[float] = []
-    for line in item_text.splitlines():
-        if not re.search(rf"\b{re.escape(profile)}\b", line, re.IGNORECASE):
-            continue
-
-        # Prefer an explicitly labelled Length value when the export includes it.
-        labelled = re.search(
-            r"\bLength\s*[:=]?\s*(\d+(?:\.\d+)?)\b", line, re.IGNORECASE
-        )
-        if labelled:
-            lengths.append(float(labelled.group(1)))
-            continue
-
-        after_code = re.split(rf"\b{re.escape(profile)}\b", line, maxsplit=1, flags=re.IGNORECASE)[-1]
-        values = [
-            float(value)
-            for value in re.findall(r"(?<![A-Za-z])\d+(?:\.\d+)?(?![A-Za-z])", after_code)
-            if float(value) >= 100
-        ]
-        if values:
-            # Length is the dominant millimetre measurement; this also avoids
-            # quantities and common 45/90-degree cut-angle columns.
-            lengths.append(max(values))
-    return lengths
-
-
-def build_hinged_door_check(pdf_path: Path, source_name: str) -> dict | None:
-    """Validate V661 against the shorter V650/V651 in Assembly hinged-door items."""
-    import pdfplumber
-
-    with pdfplumber.open(str(pdf_path)) as pdf:
-        text = "\n".join(page.extract_text() or "" for page in pdf.pages)
-
-    if "assembly" not in source_name.casefold() and not re.search(
-        r"\bAssembly\b", text, re.IGNORECASE
-    ):
-        return None
-
-    item_matches = list(re.finditer(r"(?m)^\s*#\s*(\d+)\b", text))
-    problems = []
-    checked_items = []
-    for index, match in enumerate(item_matches):
-        item_no = int(match.group(1))
-        end = item_matches[index + 1].start() if index + 1 < len(item_matches) else len(text)
-        item_text = text[match.start():end]
-        frame_match = re.search(r"(?mi)^\s*Frame\s*:\s*([^\n]+)", item_text)
-        frame = frame_match.group(1).strip() if frame_match else ""
-        if not re.search(r"\bHinged\s+(?:Dr|Door)\b", frame, re.IGNORECASE):
-            continue
-
-        checked_items.append(item_no)
-        v661_values = _profile_lengths(item_text, "V661")
-        frame_profile_values = [
-            (profile, length)
-            for profile in ("V650", "V651")
-            for length in _profile_lengths(item_text, profile)
-        ]
-        v661 = v661_values[0] if v661_values else None
-        shorter_profile, shorter_frame_length = (
-            min(frame_profile_values, key=lambda value: value[1])
-            if frame_profile_values
-            else (None, None)
-        )
-        difference = (
-            abs(v661 - shorter_frame_length)
-            if v661 is not None and shorter_frame_length is not None
-            else None
-        )
-        if difference is None or abs(difference - 240) > 0.01:
-            problems.append({
-                "item": item_no,
-                "v661": v661,
-                "frame_profile": shorter_profile,
-                "frame_length": shorter_frame_length,
-                "difference": difference,
-            })
-
-    return {
-        "status": "warning" if problems else "success",
-        "checked_items": ", ".join(str(item) for item in checked_items),
-        "problems": problems,
-    }
-
-
-@app.get("/")
+@app.get('/')
 def index():
-    return render_template(
-        "index.html",
-        blob_upload_enabled=bool(os.environ.get("BLOB_READ_WRITE_TOKEN")),
-        max_upload_mb=MAX_BLOB_UPLOAD_BYTES // (1024 * 1024),
-    )
+    return render_template('index.html', blob_upload_enabled=store.remote,
+                           max_upload_mb=100 if store.remote else 25)
 
 
-@app.post("/generate")
+@app.errorhandler(413)
+def too_large(error):
+    return render_template('error.html', message='The local upload limit is 25 MB in total.'), 413
+
+
+@app.errorhandler(FileNotFoundError)
+def missing_job(error):
+    if request.path.startswith('/api/'):
+        return jsonify(error='This job is no longer available. Please upload again.'), 404
+    return render_template('error.html', message='This job is no longer available. Please upload again.'), 404
+
+
+@app.post('/generate')
 def generate():
-    uploaded_file = request.files.get("pdf_file")
-    if not uploaded_file or not uploaded_file.filename:
-        flash("Please choose a PDF file first.")
-        return redirect(url_for("index"))
-
-    safe_name = secure_filename(uploaded_file.filename)
-    if not is_allowed_file(safe_name):
-        flash("Only PDF files are supported.")
-        return redirect(url_for("index"))
-
-    job_id = uuid.uuid4().hex
-    paths = get_job_paths(job_id)
-    paths["job_dir"].mkdir(parents=True, exist_ok=True)
-    uploaded_file.save(paths["input_path"])
-
+    uploaded = request.files.getlist('pdf_file')
     try:
-        generate_job(paths)
-    except Exception as exc:
-        shutil.rmtree(paths["job_dir"], ignore_errors=True)
-        flash(f"Generation failed: {exc}")
-        return redirect(url_for("index"))
+        if not 1 <= len(uploaded) <= MAX_FILES:
+            raise ValueError('Choose one to three PDFs from the same quote.')
+        files = []
+        for upload in uploaded:
+            name = secure_filename(upload.filename or '')
+            content = upload.read()
+            validate_pdf(name, content)
+            files.append((name, content))
+        job_id = store.create(files)
+    except ValueError as exc:
+        flash(str(exc))
+        return redirect(url_for('index'))
+    return redirect(url_for('result', job_id=job_id))
 
-    return redirect(url_for("result", job_id=job_id, source_name=safe_name))
 
-
-@app.post("/generate-from-blob")
+@app.post('/generate-from-blob')
 def generate_from_blob():
-    if not os.environ.get("BLOB_READ_WRITE_TOKEN"):
-        return jsonify(error="Large-file upload is not available in this environment."), 503
-
-    payload = request.get_json(silent=True) or {}
-    blob_pathname = str(payload.get("blob_pathname") or "")
-    source_name = secure_filename(str(payload.get("source_name") or ""))
-
-    if not BLOB_PATH_RE.fullmatch(blob_pathname) or ".." in blob_pathname:
-        return jsonify(error="Invalid uploaded PDF reference."), 400
-    if not source_name or not is_allowed_file(source_name):
-        source_name = "uploaded.pdf"
-
-    job_id = uuid.uuid4().hex
-    paths = get_job_paths(job_id)
-    paths["job_dir"].mkdir(parents=True, exist_ok=True)
-
+    if not store.remote:
+        return jsonify(error='Large-file upload is not available here.'), 503
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify(error='Invalid upload request.'), 400
+    uploads = payload.get('files', [payload])
+    if not isinstance(uploads, list) or not 1 <= len(uploads) <= MAX_FILES:
+        return jsonify(error='Choose one to three PDFs from the same quote.'), 400
+    paths = []
+    for item in uploads:
+        pathname = str(item.get('blob_pathname', '')) if isinstance(item, dict) else ''
+        if not BLOB_PATH_RE.fullmatch(pathname) or '..' in pathname or pathname in paths:
+            return jsonify(error='Invalid uploaded PDF reference.'), 400
+        paths.append(pathname)
     try:
-        from vercel.blob import download_file
-
-        download_file(
-            blob_pathname,
-            paths["input_path"],
-            access="private",
-            timeout=120,
-        )
-
-        if paths["input_path"].stat().st_size > MAX_BLOB_UPLOAD_BYTES:
-            raise ValueError("The uploaded PDF is larger than 100 MB.")
-        with paths["input_path"].open("rb") as pdf_file:
-            if pdf_file.read(5) != b"%PDF-":
-                raise ValueError("The uploaded file is not a valid PDF.")
-
-        generate_job(paths)
-    except Exception as exc:
-        shutil.rmtree(paths["job_dir"], ignore_errors=True)
-        return jsonify(error=f"Generation failed: {exc}"), 400
+        from vercel.blob import get
+        files = []
+        total = 0
+        for item, pathname in zip(uploads, paths):
+            content = get(pathname, access='private', use_cache=False, timeout=120).content
+            name = secure_filename(str(item.get('source_name') or 'uploaded.pdf'))
+            validate_pdf(name, content)
+            total += len(content)
+            if total > MAX_BLOB_UPLOAD_BYTES:
+                raise ValueError('The combined upload limit is 100 MB.')
+            files.append((name, content))
+        job_id = store.create(files)
+    except Exception:
+        app.logger.exception('Could not store uploaded PDFs')
+        return jsonify(error='Could not prepare the uploaded PDFs. Check the files and try again.'), 400
     finally:
         try:
             from vercel.blob import delete
-
-            delete(blob_pathname)
+            delete(paths)
         except Exception:
-            app.logger.exception("Could not delete temporary Blob upload %s", blob_pathname)
-
-    return jsonify(
-        result_url=url_for("result", job_id=job_id, source_name=source_name)
-    )
+            app.logger.exception('Could not remove temporary uploads')
+    return jsonify(result_url=url_for('result', job_id=job_id))
 
 
-@app.get("/result/<job_id>")
-def result(job_id: str):
-    paths = get_job_paths(job_id)
-    if not paths["output_path"].is_file():
-        flash("This generated file is no longer available.")
-        return redirect(url_for("index"))
-
-    source_name = request.args.get("source_name", "Uploaded PDF")
-    hinged_door_check = None
-    try:
-        hinged_door_check = build_hinged_door_check(paths["input_path"], source_name)
-    except Exception:
-        # This is an additional quality check and must not block a successful
-        # label generation or download.
-        hinged_door_check = None
-    return render_template(
-        "result.html",
-        job_id=job_id,
-        source_name=source_name,
-        hinged_door_check=hinged_door_check,
-    )
+@app.get('/result/<job_id>')
+def result(job_id):
+    manifest = store.json(job_id, 'manifest.json')
+    return render_template('result.html', job_id=job_id, features=FEATURES,
+                           inputs=manifest['inputs'], results=store.results(job_id))
 
 
-@app.get("/download/<job_id>")
-def download(job_id: str):
-    paths = get_job_paths(job_id)
-    if not paths["output_path"].is_file():
-        flash("This generated file is no longer available.")
-        return redirect(url_for("index"))
-
-    source_name = request.args.get("source_name", "despatch_label")
-    download_name = f"{Path(source_name).stem}_despatch_label.pdf"
-    return send_file(
-        paths["output_path"],
-        as_attachment=True,
-        download_name=download_name,
-        mimetype="application/pdf",
-    )
+@app.post('/api/jobs/<job_id>/<feature>/run')
+def feature_run(job_id, feature):
+    if feature not in FEATURES:
+        abort(404)
+    return jsonify(run_feature(store, job_id, feature))
 
 
-if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=int(os.environ.get("PORT", "5000")),
-        debug=False,
-    )
+@app.get('/api/jobs/<job_id>/<feature>/report')
+def feature_report(job_id, feature):
+    if feature not in FEATURES:
+        abort(404)
+    content = store.read(job_id, f'{feature}/result.json')
+    return send_file(io.BytesIO(content), mimetype='application/json', as_attachment=True,
+                     download_name=f'{feature}_report.json')
+
+
+@app.get('/download/<job_id>')
+def download(job_id):
+    result = store.json(job_id, 'delivery/result.json')
+    if result.get('status') != 'success' or result.get('artifact') != 'despatch_label.pdf':
+        abort(404)
+    content = store.read(job_id, 'delivery/despatch_label.pdf')
+    return send_file(io.BytesIO(content), as_attachment=True, download_name='despatch_label.pdf', mimetype='application/pdf')
+
+
+@app.post('/jobs/<job_id>/delete')
+def delete_job(job_id):
+    store.delete(job_id)
+    flash('Uploaded files and tool results deleted.')
+    return redirect(url_for('index'))
+
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=int(os.environ.get('PORT', '5000')), debug=False)
