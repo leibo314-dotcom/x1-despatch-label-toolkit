@@ -44,3 +44,9 @@ ambiguous OCR, unsupported systems or incomplete cut lists do not receive Pass.
 The old universal 240 mm rule is removed. Actual source quote 50936 has 12 pages,
 10 items. Rail lengths: 646,664,682,626,606,636,695,704,626,616 mm. All match.
 Further independent historical quotes are needed before expanding the rule set.
+
+Preview dependencies are locked in pyproject.toml / uv.lock. RapidOCR's desktop
+OpenCV dependency is explicitly replaced by opencv-python-headless, so the
+server does not need X11/libxcb. Use uv sync and uv run app.py for local checks;
+run tests with uv run --with pytest python -m pytest -q. requirements.txt remains
+the unchanged legacy desktop/delivery dependency list for the existing launchers.

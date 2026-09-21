@@ -1,0 +1,16 @@
+[project]
+name = "x1-despatch-label-toolkit-preview"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "flask", "numpy", "pdfplumber", "pillow", "reportlab", "pymupdf",
+    "vercel==0.11.3",
+    "rapidocr-onnxruntime==1.4.4",
+    "opencv-python-headless==4.11.0.86",
+]
+
+[tool.uv]
+# RapidOCR requests desktop OpenCV, but uses no GUI APIs. Install the headless
+# distribution instead; never install two packages which both own cv2 files.
+exclude-dependencies = ["opencv-python"]
+package = false
