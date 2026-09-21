@@ -1,19 +1,131 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FMI Document Tools — Test</title><link rel="stylesheet" href="/styles.css"></head><body>
-<aside class="test-banner"><span class="test-banner-badge">TEST ENVIRONMENT</span><span class="test-banner-copy">For testing only — this is not the live website.</span></aside>
-<main class="shell"><section class="hero"><p class="eyebrow">FMI document tools</p>
-<h1>Upload once.<br>Get three separate results.</h1><p class="lede">Delivery docket · Colour check · Door panel width</p></section>
-{% with messages = get_flashed_messages() %}{% for message in messages %}<div class="flash error">{{ message }}</div>{% endfor %}{% endwith %}
-<section class="card"><header class="card-header"><div><p class="section-kicker">SHARED DOCUMENT INPUT</p><h2>Upload the PDFs for one quote</h2></div></header>
-<form class="upload-form" action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data"
-data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}" data-max-mb="{{ max_upload_mb }}">
-<label class="file-picker" for="pdf_file"><span class="file-picker-name" data-file-name>Choose PDFs or drop them here</span><span class="file-picker-icon" aria-hidden="true"></span>
-<input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" multiple required></label>
-<p class="dropzone-copy">Choose 1–3 related PDFs, up to {{ max_upload_mb }} MB combined. Include Assembly (Detail) for door width checks. A Schedule is preferred for the docket.</p>
-<div class="form-footer"><div class="format-list"><span>Schedule</span><span>Assembly (Detail)</span><span>Itemised BOM</span></div>
-<button class="primary-btn" type="submit">Upload &amp; run tools</button></div>
-<section class="upload-status" aria-live="polite" hidden><div class="upload-status-row"><span data-upload-status></span><span data-upload-percent></span></div><progress data-upload-progress max="100" value="0"></progress></section>
-</form></section>
-<section class="tool-intro"><div><h3>Delivery docket</h3><p>Generate and download the existing delivery PDF.</p></div><div><h3>Colour check</h3><p>Compare named finishes and flag missing or different colours.</p></div><div><h3>Door panel width</h3><p>Experimental TL40 rules. Check V661 widths; unclear or unsupported details need manual review.</p></div></section>
-</main><script type="module" src="/upload.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>X1 Despatch Label Web App</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <aside class="test-banner" aria-label="Test environment notice">
+    <span class="test-banner-badge">TEST ENVIRONMENT</span>
+    <span class="test-banner-copy">For testing only - this is not the live website.</span>
+  </aside>
+  <main class="shell">
+    <section class="hero">
+      <p class="eyebrow">X1 Label Toolkit</p>
+      <h1>Generate despatch labels<br>from an X1 Schedule or Assembly PDF.</h1>
+      <p class="lede">Colour and panel checks appear alongside your download.</p>
+    </section>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <section class="flash-list">
+          {% for message in messages %}
+            <div class="flash error">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card">
+      <header class="card-header">
+        <div>
+          <p class="section-kicker">DOCUMENT INPUT</p>
+          <h2>Generate your delivery PDF</h2>
+        </div>
+      </header>
+      <form
+        class="upload-form"
+        action="{{ url_for('generate') }}"
+        method="post"
+        enctype="multipart/form-data"
+        data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}"
+      >
+        <label class="file-picker" for="pdf_file">
+          <span class="file-picker-name" data-file-name>Choose PDF or drop it here</span>
+          <span class="file-picker-icon" aria-hidden="true"></span>
+          <input id="pdf_file" name="pdf_file" type="file" accept=".pdf,application/pdf" required>
+        </label>
+        <p class="dropzone-copy">
+          X1 Schedule and Assembly (Detail) PDFs are supported, up to {{ max_upload_mb }} MB.
+        </p>
+        <div class="form-footer">
+          <div class="format-list" aria-label="Supported document types">
+            <span><b class="format-icon format-icon-schedule" aria-hidden="true"></b>Schedule</span>
+            <span><b class="format-icon format-icon-assembly" aria-hidden="true"></b>Assembly (Detail)</span>
+            <span><b class="format-icon format-icon-file" aria-hidden="true"></b>{{ max_upload_mb }} MB max</span>
+          </div>
+          <button class="primary-btn" type="submit">Generate PDF</button>
+        </div>
+        <section class="upload-status" aria-live="polite" hidden>
+          <div class="upload-status-row">
+            <span data-upload-status>Preparing upload...</span>
+            <span data-upload-percent></span>
+          </div>
+          <progress data-upload-progress max="100" value="0"></progress>
+        </section>
+      </form>
+    </section>
+  </main>
+  {% if blob_upload_enabled %}
+    <script type="module" src="/upload.js"></script>
+  {% endif %}
+  <script>
+    const pdfInput = document.querySelector('#pdf_file');
+    const filePicker = document.querySelector('.file-picker');
+    const fileName = document.querySelector('[data-file-name]');
+    const emptyPrompt = 'Choose PDF or drop it here';
+
+    pdfInput?.addEventListener('change', () => {
+      filePicker.classList.remove('is-invalid');
+      fileName.textContent = pdfInput.files?.[0]?.name || emptyPrompt;
+    });
+
+    let dragDepth = 0;
+
+    filePicker?.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth += 1;
+      filePicker.classList.add('is-dragging');
+      filePicker.classList.remove('is-invalid');
+      fileName.textContent = 'Drop PDF here';
+    });
+
+    filePicker?.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+
+    filePicker?.addEventListener('dragleave', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) {
+        filePicker.classList.remove('is-dragging');
+        fileName.textContent = pdfInput.files?.[0]?.name || emptyPrompt;
+      }
+    });
+
+    filePicker?.addEventListener('drop', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragDepth = 0;
+      filePicker.classList.remove('is-dragging');
+      const file = event.dataTransfer?.files?.[0];
+      if (!file || !file.name.toLowerCase().endsWith('.pdf')) {
+        pdfInput.value = '';
+        filePicker.classList.add('is-invalid');
+        fileName.textContent = 'Please drop a PDF file';
+        return;
+      }
+
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      pdfInput.files = transfer.files;
+      pdfInput.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  </script>
+</body>
+</html>

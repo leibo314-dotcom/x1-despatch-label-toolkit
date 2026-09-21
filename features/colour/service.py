@@ -14,8 +14,8 @@ def check_colours(documents):
             item_numbers.add(item.number)
             value=' '.join(item.colour.split())
             evidence=dict(item=item.number,source=doc.name,pages=list(item.pages),colour=value)
-            if not value or re.search(r'\b\d+\s+of\b|standard\s+\d+\s+colou?rs|TBC|TBD',value,re.I):
-                unresolved.append({**evidence,'reason':'Actual finish is missing or a generic colour selection.'})
+            if not value:
+                unresolved.append({**evidence,'reason':'Colour information is missing.'})
             else:
                 key=value.casefold()
                 colours.setdefault(key,{'colour':value,'items':set(),'sources':set()})
@@ -26,9 +26,9 @@ def check_colours(documents):
         return dict(status='manual',summary='No item-level colour information was found.',details=[])
     mismatch=len(groups)>1
     status='warning' if mismatch else 'manual' if unresolved else 'success'
-    return dict(status=status,
+    return dict(status=status, colour=groups[0]['colour'] if len(groups)==1 else '',
         summary=(f'{len(groups)} different named finishes need review; confirm against the specification.' if mismatch
-                 else 'Some actual finishes could not be verified.' if unresolved else 'All named item finishes match.'),
+                 else 'Some colours are missing.' if unresolved else groups[0]['colour']),
         item_count=len(item_numbers),groups=groups,details=unresolved)
 
 

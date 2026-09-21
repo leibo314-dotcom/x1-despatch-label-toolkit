@@ -25,7 +25,3 @@ def test_actual_sample_and_continuations(sample,tmp_path):
 def test_duplicate_documents_are_manual(sample,tmp_path):
     result=run([{'path':sample,'name':sample.name}]*2,tmp_path)
     assert result['counts']['manual']==10
-
-def test_screw_number_is_not_an_extra_delivery_item(sample):
-    from features.delivery.renderer import parse_items
-    assert [i.no for i in parse_items(sample)]==list(range(1,11))

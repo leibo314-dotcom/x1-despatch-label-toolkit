@@ -2,7 +2,6 @@
 from collections import Counter
 import re
 from services.documents import read_sources, require_one_quote
-from .drawing import DrawingUnclear, read_drawing
 from .rules import RULE_VERSION, compare_widths
 
 
@@ -11,7 +10,7 @@ def candidate(item):
                 any(p.code in ('V650','V651','V660','V661','V220') for p in item.profiles))
 
 
-def check_item(doc,item,drawing_reader=read_drawing):
+def check_item(doc,item,drawing_reader=None):
     base=dict(item=item.number,description=item.description,source=doc.name,pages=list(item.pages),
               quote=doc.quote,rule_version=RULE_VERSION)
     def stop(reason,status='manual',**evidence):
@@ -46,6 +45,8 @@ def check_item(doc,item,drawing_reader=read_drawing):
     s,c=quantities['V662'],quantities['V700']
     if s not in (0,1,2) or c not in (0,1,2):
         return stop('The number of sidelights/couplings is outside the verified rule family.','unsupported')
+    from .drawing import DrawingUnclear, read_drawing
+    drawing_reader = drawing_reader or read_drawing
     try:
         drawing=drawing_reader(doc.path,item.pages[0])
     except (DrawingUnclear,ImportError) as exc:
@@ -76,8 +77,7 @@ def check_item(doc,item,drawing_reader=read_drawing):
             'reason':'V661 width differs from the candidate rule; review both the construction and rule applicability.' if comparison['status']=='mismatch' else ''}
 
 
-def run(inputs,output_dir):
-    docs=read_sources(inputs)
+def check_documents(docs):
     require_one_quote(docs)
     groups={}
     for doc in docs:
@@ -113,3 +113,7 @@ def run(inputs,output_dir):
         counts=summary,details=[r for r in results if r['status']!='passed'],items=results,
         rule_version=RULE_VERSION,
         note='Candidate TL40 width rules validated against quote 50936 only. System deductions are not physical gaps. Height and glass dimensions are not checked.')
+
+
+def run(inputs,output_dir):
+    return check_documents(read_sources(inputs))

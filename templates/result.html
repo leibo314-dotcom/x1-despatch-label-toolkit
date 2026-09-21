@@ -1,22 +1,18 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FMI — Document tools (Test)</title><link rel="stylesheet" href="/styles.css"></head><body>
+<title>FMI Delivery PDF — Test</title><link rel="stylesheet" href="/styles.css"></head><body>
 <aside class="test-banner"><span class="test-banner-badge">TEST ENVIRONMENT</span><span class="test-banner-copy">For testing only — this is not the live website.</span></aside>
 <main class="shell" data-job="{{ job_id }}">
-<section class="hero"><p class="eyebrow">FMI document tools</p><h1>One upload. Three independent tools.</h1>
-<p class="lede">{% for input in inputs %}{{ input.name }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
-<p>Each tool has its own result and can be retried separately. Download your docket as soon as it is ready.</p></section>
-<noscript><p>Enable JavaScript to run the three tools.</p></noscript><div class="tool-grid">
-{% for key, feature in features.items() %}
-<section class="card tool-card" data-feature="{{ key }}">
-<header class="tool-heading"><h2>{{ feature[0] }}</h2><span class="tool-badge" data-status>Pending</span></header>
-<p data-summary aria-live="polite">Ready to run.</p><details data-evidence hidden><summary>View items needing attention</summary><div data-details></div></details><p class="tool-note" data-note></p>
-<div class="tool-actions"><button class="primary-btn" data-run>Run tool</button>
-<a data-download hidden href="{{ url_for('download', job_id=job_id) }}">Download docket PDF</a>
-<a data-report hidden href="{{ url_for('feature_report', job_id=job_id, feature=key) }}">Download evidence (JSON)</a></div>
-</section>{% endfor %}</div>
-<section class="card job-footer"><a href="/">Upload another quote</a>
-<form method="post" action="{{ url_for('delete_job', job_id=job_id) }}"><button class="secondary-btn" type="submit" data-delete>Delete this upload and its results</button></form>
-<p class="tool-note">Test files are stored privately for retries. Use Delete when you have finished.</p></section></main>
-<script type="application/json" id="initial-results">{{ results|tojson }}</script>
-<script type="module" src="/results.js"></script></body></html>
+<section class="hero"><p class="eyebrow">Ready</p><h1>Your delivery docket is ready.</h1><p class="lede">{{ source_name }}</p></section>
+<section class="card docket-ready"><h2>Delivery Docket</h2>
+<a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a></section>
+<section class="card checks-card"><h2>Checks</h2>
+{% for key, title in [('colour','Colour'),('door_width','Panel width / gap')] %}
+<section class="check-row" data-feature="{{ key }}" data-state="pending">
+<header class="check-heading"><h3>{{ title }}</h3><span data-colour class="check-colour"></span><span class="tool-badge" data-status>Checking…</span></header>
+<details data-evidence hidden><summary>View issues</summary><div data-details></div></details>
+</section>{% endfor %}
+<button class="secondary-btn" data-retry hidden>Retry checks</button>
+<noscript><p>Enable JavaScript to run the optional checks. Your PDF is ready to download above.</p></noscript>
+</section><p class="back-link"><a href="/">Generate another file</a></p>
+</main><script type="module" src="/results.js"></script></body></html>

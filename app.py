@@ -1,144 +1,177 @@
-import io
 import os
-from pathlib import Path
 import re
-from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
+import shutil
+import uuid
+from pathlib import Path
+
+from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
-from services.jobs import FEATURES, JobStore, run_feature
+from services.checks import run_checks
 
-app = Flask(__name__, template_folder='templates', static_folder='public', static_url_path='')
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'x1-despatch-label-local')
-app.config['MAX_CONTENT_LENGTH'] = 25 * 1024 * 1024
+app = Flask(__name__, template_folder="templates", static_folder="public", static_url_path="")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "x1-despatch-label-local")
+app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
+
+TMP_ROOT = Path(os.environ.get("TMPDIR") or os.environ.get("TEMP") or "/tmp")
+JOBS_DIR = TMP_ROOT / "x1_despatch_label_jobs"
+ALLOWED_EXTENSIONS = {".pdf"}
 MAX_BLOB_UPLOAD_BYTES = 100 * 1024 * 1024
-MAX_FILES = 3
-BLOB_PATH_RE = re.compile(r'^x1-inputs/[0-9a-f]{32}-[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.pdf$')
-store = JobStore(Path(os.environ.get('TMPDIR') or os.environ.get('TEMP') or '/tmp'),
-                 remote=bool(os.environ.get('BLOB_READ_WRITE_TOKEN')))
+BLOB_PATH_RE = re.compile(
+    r"^x1-inputs/[0-9a-f]{32}-[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.pdf$"
+)
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def validate_pdf(name, content):
-    if Path(name).suffix.lower() != '.pdf' or not content.startswith(b'%PDF-'):
-        raise ValueError('Only valid PDF files are supported.')
-    if len(content) > MAX_BLOB_UPLOAD_BYTES:
-        raise ValueError('The combined upload limit is 100 MB.')
+def is_allowed_file(filename: str) -> bool:
+    return Path(filename).suffix.lower() in ALLOWED_EXTENSIONS
 
 
-@app.get('/')
+def get_job_paths(job_id: str) -> dict[str, Path]:
+    job_dir = JOBS_DIR / job_id
+    return {
+        "job_dir": job_dir,
+        "input_path": job_dir / "input.pdf",
+        "output_path": job_dir / "despatch_label.pdf",
+        "workdir": job_dir / "work",
+    }
+
+
+def generate_job(paths: dict[str, Path]) -> None:
+    from x1_despatch_label_real_diagram import generate_despatch_label
+
+    generate_despatch_label(paths["input_path"], paths["output_path"], paths["workdir"])
+
+
+@app.get("/")
 def index():
-    return render_template('index.html', blob_upload_enabled=store.remote,
-                           max_upload_mb=100 if store.remote else 25)
+    return render_template(
+        "index.html",
+        blob_upload_enabled=bool(os.environ.get("BLOB_READ_WRITE_TOKEN")),
+        max_upload_mb=100 if os.environ.get("BLOB_READ_WRITE_TOKEN") else 25,
+    )
 
 
-@app.errorhandler(413)
-def too_large(error):
-    return render_template('error.html', message='The local upload limit is 25 MB in total.'), 413
-
-
-@app.errorhandler(FileNotFoundError)
-def missing_job(error):
-    if request.path.startswith('/api/'):
-        return jsonify(error='This job is no longer available. Please upload again.'), 404
-    return render_template('error.html', message='This job is no longer available. Please upload again.'), 404
-
-
-@app.post('/generate')
+@app.post("/generate")
 def generate():
-    uploaded = request.files.getlist('pdf_file')
+    uploaded_file = request.files.get("pdf_file")
+    if not uploaded_file or not uploaded_file.filename:
+        flash("Please choose a PDF file first.")
+        return redirect(url_for("index"))
+
+    safe_name = secure_filename(uploaded_file.filename)
+    if not is_allowed_file(safe_name):
+        flash("Only PDF files are supported.")
+        return redirect(url_for("index"))
+
+    job_id = uuid.uuid4().hex
+    paths = get_job_paths(job_id)
+    paths["job_dir"].mkdir(parents=True, exist_ok=True)
+    uploaded_file.save(paths["input_path"])
+
     try:
-        if not 1 <= len(uploaded) <= MAX_FILES:
-            raise ValueError('Choose one to three PDFs from the same quote.')
-        files = []
-        for upload in uploaded:
-            name = secure_filename(upload.filename or '')
-            content = upload.read()
-            validate_pdf(name, content)
-            files.append((name, content))
-        job_id = store.create(files)
-    except ValueError as exc:
-        flash(str(exc))
-        return redirect(url_for('index'))
-    return redirect(url_for('result', job_id=job_id))
+        generate_job(paths)
+    except Exception as exc:
+        shutil.rmtree(paths["job_dir"], ignore_errors=True)
+        flash(f"Generation failed: {exc}")
+        return redirect(url_for("index"))
+
+    return redirect(url_for("result", job_id=job_id, source_name=safe_name))
 
 
-@app.post('/generate-from-blob')
+@app.post("/generate-from-blob")
 def generate_from_blob():
-    if not store.remote:
-        return jsonify(error='Large-file upload is not available here.'), 503
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify(error='Invalid upload request.'), 400
-    uploads = payload.get('files', [payload])
-    if not isinstance(uploads, list) or not 1 <= len(uploads) <= MAX_FILES:
-        return jsonify(error='Choose one to three PDFs from the same quote.'), 400
-    paths = []
-    for item in uploads:
-        pathname = str(item.get('blob_pathname', '')) if isinstance(item, dict) else ''
-        if not BLOB_PATH_RE.fullmatch(pathname) or '..' in pathname or pathname in paths:
-            return jsonify(error='Invalid uploaded PDF reference.'), 400
-        paths.append(pathname)
+    if not os.environ.get("BLOB_READ_WRITE_TOKEN"):
+        return jsonify(error="Large-file upload is not available in this environment."), 503
+
+    payload = request.get_json(silent=True) or {}
+    blob_pathname = str(payload.get("blob_pathname") or "")
+    source_name = secure_filename(str(payload.get("source_name") or ""))
+
+    if not BLOB_PATH_RE.fullmatch(blob_pathname) or ".." in blob_pathname:
+        return jsonify(error="Invalid uploaded PDF reference."), 400
+    if not source_name or not is_allowed_file(source_name):
+        source_name = "uploaded.pdf"
+
+    job_id = uuid.uuid4().hex
+    paths = get_job_paths(job_id)
+    paths["job_dir"].mkdir(parents=True, exist_ok=True)
+
     try:
-        from vercel.blob import get
-        files = []
-        total = 0
-        for item, pathname in zip(uploads, paths):
-            content = get(pathname, access='private', use_cache=False, timeout=120).content
-            name = secure_filename(str(item.get('source_name') or 'uploaded.pdf'))
-            validate_pdf(name, content)
-            total += len(content)
-            if total > MAX_BLOB_UPLOAD_BYTES:
-                raise ValueError('The combined upload limit is 100 MB.')
-            files.append((name, content))
-        job_id = store.create(files)
-    except Exception:
-        app.logger.exception('Could not store uploaded PDFs')
-        return jsonify(error='Could not prepare the uploaded PDFs. Check the files and try again.'), 400
+        from vercel.blob import download_file
+
+        download_file(
+            blob_pathname,
+            paths["input_path"],
+            access="private",
+            timeout=120,
+        )
+
+        if paths["input_path"].stat().st_size > MAX_BLOB_UPLOAD_BYTES:
+            raise ValueError("The uploaded PDF is larger than 100 MB.")
+        with paths["input_path"].open("rb") as pdf_file:
+            if pdf_file.read(5) != b"%PDF-":
+                raise ValueError("The uploaded file is not a valid PDF.")
+
+        generate_job(paths)
+    except Exception as exc:
+        shutil.rmtree(paths["job_dir"], ignore_errors=True)
+        return jsonify(error=f"Generation failed: {exc}"), 400
     finally:
         try:
             from vercel.blob import delete
-            delete(paths)
+
+            delete(blob_pathname)
         except Exception:
-            app.logger.exception('Could not remove temporary uploads')
-    return jsonify(result_url=url_for('result', job_id=job_id))
+            app.logger.exception("Could not delete temporary Blob upload %s", blob_pathname)
+
+    return jsonify(
+        result_url=url_for("result", job_id=job_id, source_name=source_name)
+    )
 
 
-@app.get('/result/<job_id>')
-def result(job_id):
-    manifest = store.json(job_id, 'manifest.json')
-    return render_template('result.html', job_id=job_id, features=FEATURES,
-                           inputs=manifest['inputs'], results=store.results(job_id))
+@app.get("/result/<job_id>")
+def result(job_id: str):
+    paths = get_job_paths(job_id)
+    if not paths["output_path"].is_file():
+        flash("This generated file is no longer available.")
+        return redirect(url_for("index"))
+
+    source_name = request.args.get("source_name", "Uploaded PDF")
+    return render_template("result.html", job_id=job_id, source_name=source_name)
 
 
-@app.post('/api/jobs/<job_id>/<feature>/run')
-def feature_run(job_id, feature):
-    if feature not in FEATURES:
-        abort(404)
-    return jsonify(run_feature(store, job_id, feature))
+
+@app.get("/download/<job_id>")
+def download(job_id: str):
+    paths = get_job_paths(job_id)
+    if not paths["output_path"].is_file():
+        flash("This generated file is no longer available.")
+        return redirect(url_for("index"))
+
+    source_name = request.args.get("source_name", "despatch_label")
+    download_name = f"{Path(source_name).stem}_despatch_label.pdf"
+    return send_file(
+        paths["output_path"],
+        as_attachment=True,
+        download_name=download_name,
+        mimetype="application/pdf",
+    )
 
 
-@app.get('/api/jobs/<job_id>/<feature>/report')
-def feature_report(job_id, feature):
-    if feature not in FEATURES:
-        abort(404)
-    content = store.read(job_id, f'{feature}/result.json')
-    return send_file(io.BytesIO(content), mimetype='application/json', as_attachment=True,
-                     download_name=f'{feature}_report.json')
+@app.post("/api/jobs/<job_id>/checks")
+def checks(job_id):
+    if not re.fullmatch(r"[0-9a-f]{32}", job_id):
+        return jsonify(error="Invalid job reference."), 404
+    paths = get_job_paths(job_id)
+    if not paths["input_path"].is_file():
+        return jsonify(error="Source PDF is no longer available. Please upload again."), 404
+    payload = request.get_json(silent=True) or {}
+    return jsonify(run_checks(paths["input_path"], paths["job_dir"], bool(payload.get("retry"))))
 
 
-@app.get('/download/<job_id>')
-def download(job_id):
-    result = store.json(job_id, 'delivery/result.json')
-    if result.get('status') != 'success' or result.get('artifact') != 'despatch_label.pdf':
-        abort(404)
-    content = store.read(job_id, 'delivery/despatch_label.pdf')
-    return send_file(io.BytesIO(content), as_attachment=True, download_name='despatch_label.pdf', mimetype='application/pdf')
-
-
-@app.post('/jobs/<job_id>/delete')
-def delete_job(job_id):
-    store.delete(job_id)
-    flash('Uploaded files and tool results deleted.')
-    return redirect(url_for('index'))
-
-
-if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=int(os.environ.get('PORT', '5000')), debug=False)
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "5000")),
+        debug=False,
+    )
