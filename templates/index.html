@@ -14,8 +14,8 @@
   <main class="shell">
     <section class="hero">
       <p class="eyebrow">X1 Label Toolkit</p>
-      <h1>Generate despatch labels<br>from an X1 Schedule or Assembly PDF.</h1>
-      <p class="lede">Colour and panel checks appear alongside your download.</p>
+      <h1>Delivery docket and item labels<br>from one X1 PDF.</h1>
+      <p class="lede">Two separate PDFs. Avery L7173 labels: one item per label, 10 labels per A4 sheet.</p>
     </section>
 
     {% with messages = get_flashed_messages() %}
@@ -32,7 +32,7 @@
       <header class="card-header">
         <div>
           <p class="section-kicker">DOCUMENT INPUT</p>
-          <h2>Generate your delivery PDF</h2>
+          <h2>Generate your PDFs</h2>
         </div>
       </header>
       <form
@@ -42,6 +42,7 @@
         enctype="multipart/form-data"
         data-blob-upload-enabled="{{ 'true' if blob_upload_enabled else 'false' }}"
       >
+        <input type="hidden" name="independent_outputs" value="1">
         <label class="file-picker" for="pdf_file">
           <span class="file-picker-name" data-file-name>Choose PDF or drop it here</span>
           <span class="file-picker-icon" aria-hidden="true"></span>
@@ -56,7 +57,7 @@
             <span><b class="format-icon format-icon-assembly" aria-hidden="true"></b>Assembly (Detail)</span>
             <span><b class="format-icon format-icon-file" aria-hidden="true"></b>{{ max_upload_mb }} MB max</span>
           </div>
-          <button class="primary-btn" type="submit">Generate PDF</button>
+          <button class="primary-btn" type="submit">Generate PDFs</button>
         </div>
         <section class="upload-status" aria-live="polite" hidden>
           <div class="upload-status-row">

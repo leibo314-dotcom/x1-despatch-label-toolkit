@@ -572,4 +572,11 @@ button:disabled { opacity: .6; cursor: wait; }
 .check-row summary { cursor: pointer; color: #83122f; }
 .back-link { text-align: center; margin-top: 24px; }
 .back-link a { color: #83122f; }
+.output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.output-card { padding: 28px; }
+.output-card h2 { font-size: 22px; margin: 0; }
+.output-card .tool-heading { flex-wrap: wrap; }
+.output-card [data-output-message] { overflow-wrap: anywhere; font-size: 14px; }
+.output-card .primary-btn { margin-top: 10px; }
+@media(max-width:680px) { .output-grid { grid-template-columns: 1fr; } }
 @media(max-width:680px) { .docket-ready { flex-direction: column; align-items: flex-start; } .check-heading { flex-wrap: wrap; } .check-colour { max-width: 100%; } }

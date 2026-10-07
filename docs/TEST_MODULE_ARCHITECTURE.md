@@ -1,4 +1,10 @@
-# Test version structure — revised after user feedback
+# Test version structure
+
+October 2026: the current test UI also generates independent Avery L7173 item
+labels. See [ITEM_LABELS.md](ITEM_LABELS.md) for the current upload/output flow
+and physical template measurements. The delivery renderer remains unchanged;
+the earlier architecture notes below describe the optional checks and legacy
+synchronous delivery routes, before the new two-output UI was added.
 
 Only `agent/colour-mismatch-warning`; do not update master or Production.
 

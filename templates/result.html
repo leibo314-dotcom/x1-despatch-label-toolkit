@@ -3,9 +3,18 @@
 <title>FMI Delivery PDF — Test</title><link rel="stylesheet" href="/styles.css"></head><body>
 <aside class="test-banner"><span class="test-banner-badge">TEST ENVIRONMENT</span><span class="test-banner-copy">For testing only — this is not the live website.</span></aside>
 <main class="shell" data-job="{{ job_id }}">
-<section class="hero"><p class="eyebrow">Ready</p><h1>Your delivery docket is ready.</h1><p class="lede">{{ source_name }}</p></section>
-<section class="card docket-ready"><h2>Delivery Docket</h2>
-<a class="primary-btn" href="{{ url_for('download', job_id=job_id, source_name=source_name) }}">Download PDF</a></section>
+<section class="hero"><p class="eyebrow">Your PDFs</p><h1>Delivery docket &amp; item labels</h1><p class="lede">{{ source_name }}</p></section>
+<div class="output-grid">
+{% for key, title, ready, endpoint in [('docket','Delivery Docket',docket_ready,'download'),('labels','Item Labels',labels_ready,'download_labels')] %}
+<section class="card output-card" data-output="{{ key }}" data-ready="{{ 'true' if ready else 'false' }}">
+<div class="tool-heading"><h2>{{ title }}</h2><span class="tool-badge" data-output-status>{{ 'Ready' if ready else 'Generating…' }}</span></div>
+{% if key == 'labels' %}<p class="tool-note">Avery L7173 · A4 · 10 labels per sheet<br>Print at <strong>100% / Actual size</strong>, with scaling turned off.</p>{% endif %}
+<p data-output-message role="status"></p>
+<a class="primary-btn" data-output-download href="{{ url_for(endpoint, job_id=job_id, source_name=source_name) }}" {% if not ready %}hidden{% endif %}>Download PDF</a>
+<button class="secondary-btn" data-output-retry hidden>Retry {{ title | lower }}</button>
+</section>{% endfor %}
+</div>
+<noscript><p>Enable JavaScript to generate both PDFs independently.</p></noscript>
 <section class="card checks-card"><h2>Checks</h2>
 {% for key, title in [('colour','Colour'),('door_width','Panel width / gap')] %}
 <section class="check-row" data-feature="{{ key }}" data-state="pending">
@@ -15,4 +24,4 @@
 <button class="secondary-btn" data-retry hidden>Retry checks</button>
 <noscript><p>Enable JavaScript to run the optional checks. Your PDF is ready to download above.</p></noscript>
 </section><p class="back-link"><a href="/">Generate another file</a></p>
-</main><script type="module" src="/results.js"></script></body></html>
+</main><script type="module" src="/outputs.js"></script><script type="module" src="/results.js"></script></body></html>

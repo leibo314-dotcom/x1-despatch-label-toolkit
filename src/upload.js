@@ -36,7 +36,7 @@ function showStatus(message, percentage = null) {
 
 function restoreForm(message) {
   submitButton.disabled = false;
-  submitButton.textContent = "Generate PDF";
+  submitButton.textContent = "Generate PDFs";
   showStatus(message, 0);
 }
 
@@ -75,13 +75,14 @@ if (form?.dataset.blobUploadEnabled === "true") {
         },
       });
 
-      showStatus("Upload complete. Generating delivery PDF...");
+      showStatus("Upload complete. Preparing your PDFs...");
       const response = await fetch("/generate-from-blob", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           blob_pathname: blob.pathname,
           source_name: file.name,
+          independent_outputs: true,
         }),
       });
       const result = await response.json();

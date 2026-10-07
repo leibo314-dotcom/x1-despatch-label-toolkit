@@ -4,7 +4,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from werkzeug.utils import secure_filename
 from services.checks import run_checks
 
@@ -27,12 +27,15 @@ def is_allowed_file(filename: str) -> bool:
 
 
 def get_job_paths(job_id: str) -> dict[str, Path]:
+    if not re.fullmatch(r"[0-9a-f]{32}", job_id):
+        abort(404)
     job_dir = JOBS_DIR / job_id
     return {
         "job_dir": job_dir,
         "input_path": job_dir / "input.pdf",
         "output_path": job_dir / "despatch_label.pdf",
         "workdir": job_dir / "work",
+        "labels_path": job_dir / "item_labels.pdf",
     }
 
 
@@ -67,6 +70,16 @@ def generate():
     paths = get_job_paths(job_id)
     paths["job_dir"].mkdir(parents=True, exist_ok=True)
     uploaded_file.save(paths["input_path"])
+
+    if request.form.get("independent_outputs") == "1":
+        from services.job_storage import persist
+        try:
+            persist(paths, paths["input_path"])
+        except Exception:
+            app.logger.exception("Could not prepare shared upload")
+            flash("Could not prepare the uploaded PDF. Please try again.")
+            return redirect(url_for("index"))
+        return redirect(url_for("result", job_id=job_id, source_name=safe_name))
 
     try:
         generate_job(paths)
@@ -112,7 +125,11 @@ def generate_from_blob():
             if pdf_file.read(5) != b"%PDF-":
                 raise ValueError("The uploaded file is not a valid PDF.")
 
-        generate_job(paths)
+        if payload.get("independent_outputs") is True:
+            from services.job_storage import persist
+            persist(paths, paths["input_path"])
+        else:
+            generate_job(paths)
     except Exception as exc:
         shutil.rmtree(paths["job_dir"], ignore_errors=True)
         return jsonify(error=f"Generation failed: {exc}"), 400
@@ -132,19 +149,23 @@ def generate_from_blob():
 @app.get("/result/<job_id>")
 def result(job_id: str):
     paths = get_job_paths(job_id)
-    if not paths["output_path"].is_file():
+    from services.job_storage import restore
+    if not paths["output_path"].is_file() and not restore(paths, paths["input_path"]):
         flash("This generated file is no longer available.")
         return redirect(url_for("index"))
 
     source_name = request.args.get("source_name", "Uploaded PDF")
-    return render_template("result.html", job_id=job_id, source_name=source_name)
+    return render_template("result.html", job_id=job_id, source_name=source_name,
+                           docket_ready=paths["output_path"].is_file(),
+                           labels_ready=paths["labels_path"].is_file())
 
 
 
 @app.get("/download/<job_id>")
 def download(job_id: str):
     paths = get_job_paths(job_id)
-    if not paths["output_path"].is_file():
+    from services.job_storage import restore
+    if not restore(paths, paths["output_path"]):
         flash("This generated file is no longer available.")
         return redirect(url_for("index"))
 
@@ -163,10 +184,37 @@ def checks(job_id):
     if not re.fullmatch(r"[0-9a-f]{32}", job_id):
         return jsonify(error="Invalid job reference."), 404
     paths = get_job_paths(job_id)
-    if not paths["input_path"].is_file():
+    from services.job_storage import restore
+    if not restore(paths, paths["input_path"]):
         return jsonify(error="Source PDF is no longer available. Please upload again."), 404
     payload = request.get_json(silent=True) or {}
     return jsonify(run_checks(paths["input_path"], paths["job_dir"], bool(payload.get("retry"))))
+
+
+@app.post("/api/jobs/<job_id>/outputs/<kind>")
+def generate_output(job_id, kind):
+    if kind not in ("docket", "labels"):
+        abort(404)
+    paths = get_job_paths(job_id)
+    from services.job_storage import restore
+    if not restore(paths, paths["input_path"]):
+        return jsonify(status="error", error="Source PDF is no longer available. Please upload again."), 404
+    from services.outputs import run_output
+    payload = request.get_json(silent=True) or {}
+    result = run_output(paths, kind, generate_job, retry=bool(payload.get("retry")))
+    return jsonify(result), 200 if result['status']=='ready' else 422
+
+
+@app.get("/download-labels/<job_id>")
+def download_labels(job_id):
+    paths = get_job_paths(job_id)
+    from services.job_storage import restore
+    if not restore(paths, paths["labels_path"]):
+        abort(404, description="Labels are not available. Please generate or retry labels.")
+    source_name = request.args.get("source_name", "uploaded")
+    return send_file(paths["labels_path"], as_attachment=True,
+                     download_name=f"{Path(source_name).stem}_item_labels_L7173.pdf",
+                     mimetype="application/pdf")
 
 
 if __name__ == "__main__":
