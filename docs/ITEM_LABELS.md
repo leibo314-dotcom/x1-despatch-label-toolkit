@@ -36,18 +36,23 @@ its exported PDF; no guessed vendor margins. Two columns, five rows.
   header, stays at least 2 mm inside the die-cut boundary. A uniform scale fits
   the entire original layout within this inset; no text is cut off to fit.
 * Item and Desc use bold for both the field name and complete value. Wrapping
-  and shrinking measure the actual bold font. Output v2 avoids old PDF caches.
+  and shrinking measure the actual bold font. Output v3 avoids old PDF caches.
 
 The dimensions and positions come from the label outlines in the rendered
 template, which differ from Word's text margins. No extra page title, footer,
 cutting marks or page-number area shifts the labels. Print at 100% / Actual size.
 
-The reference's blue header, original LIDAR logo, Quote, Item, Desc, Colour,
-Suite, Flash, WAN and right-side drawing are retained. Only the logo region of
+The approved reference's blue header, original LIDAR logo, Quote, Item, Desc,
+and right-side drawing are retained. Colour, Suite, Flash and WAN are omitted.
+Only the logo region of
 the supplied reference bitmap is shown through a PDF clip. Item data and Quote
-are searchable PDF text. Flash and WAN retain the source field names and full
-product codes. Text wraps and shrinks inside fixed field areas without ellipses
-or dropped words. One physical item means one label, regardless of Quantity.
+are searchable PDF text. Item uses a 17.5 pt maximum and Desc uses a 16.7 pt
+maximum before the safety inset scale. The description uses hanging lines in
+a fixed 64 pt tall area, reserving at least one additional blank line below
+the text even when shrinking longer descriptions. No ellipses or dropped
+words. One physical item means one label, regardless of Quantity. Schedule,
+Assembly Drawing (Short) and Assembly Medium Drawing (Details) use the same
+independent label output route.
 
 ## Verification
 

@@ -14,6 +14,12 @@ CORNER_RADIUS = 8.5  # Actual rounded die-cut corners in the supplied Word file.
 PRINT_INSET = 2 * 72 / 25.4  # Minimum 2 mm from the label boundary, including ink.
 BLUE = colors.HexColor('#2e3477')
 REFERENCE = Path(__file__).parent / 'assets' / 'reference.png'
+BODY_X = 8
+BODY_WIDTH = 156
+ITEM_SIZE = 17.5
+DESC_SIZE = 16.7
+DESC_TOP = 82
+DESC_HEIGHT = 64
 
 
 def label_box(index):
@@ -42,23 +48,24 @@ def wrap_complete(value, size, width, font_name='Helvetica'):
     return lines or ['']
 
 
-def fit_field(label, value, width, height, maximum=13.4, font_name='Helvetica'):
+def fit_field(label, value, width, height, maximum=13.4, font_name='Helvetica', reserve_lines=0):
     value = str(value or '-')
     # Shrink the value and its prefix together, without truncation or ellipses.
     size = maximum
     while True:
         prefix = stringWidth(label, 'Helvetica-Bold', size) + size*.16
         lines = wrap_complete(value, size, max(width-prefix, .1), font_name)
-        if len(lines)*size*1.06 <= height and prefix < width:
+        if (len(lines)+reserve_lines)*size*1.06 <= height and prefix < width:
             return size, prefix, lines
         size *= .95
         if size < .3:
             raise ValueError(f'The {label} value is too long to fit on a label.')
 
 
-def draw_field(c, label, value, x, top, width, height):
+def draw_field(c, label, value, x, top, width, height, maximum=13.4, reserve_lines=0):
     font_name = 'Helvetica-Bold' if label in ('Item:', 'Desc:') else 'Helvetica'
-    size, prefix, lines = fit_field(label, value, width, height, font_name=font_name)
+    size, prefix, lines = fit_field(label, value, width, height, maximum=maximum,
+                                  font_name=font_name, reserve_lines=reserve_lines)
     baseline = top-size*.82
     c.setFillColor(colors.black)
     c.setFont('Helvetica-Bold', size)
@@ -96,12 +103,12 @@ def draw_label(c, item, quote, diagram, index):
     title_size = min(24, 164/stringWidth(title, 'Helvetica-Bold', 1))
     c.setFillColor(colors.white); c.setFont('Helvetica-Bold', title_size)
     c.drawRightString(width-6, height-header_height/2-title_size*.34, title)
-    # Positions follow the supplied reference: six fields on the left, drawing right.
-    fields = [('Item:', str(item.no), 42, 14), ('Desc:', item.desc, 57, 14),
-              ('Colour:', item.colour, 72, 14), ('Suite:', item.suite, 87, 14),
-              ('Flash:', item.flashing, 102, 29), ('WAN:', item.wanz, 131, 28)]
-    for label, value, offset, field_height in fields:
-        draw_field(c, label, value, 6.8, height-offset, 179, field_height)
+    # Approved two-field preview: bold, hanging description lines and room
+    # below for another line. Long descriptions shrink within this same box.
+    draw_field(c, 'Item:', str(item.no), BODY_X, height-59, BODY_WIDTH, 21,
+               maximum=ITEM_SIZE)
+    draw_field(c, 'Desc:', item.desc, BODY_X, height-DESC_TOP, BODY_WIDTH, DESC_HEIGHT,
+               maximum=DESC_SIZE, reserve_lines=1)
     reader = ImageReader(str(diagram))
     iw, ih = reader.getSize()
     available_w, available_h = 85, 102

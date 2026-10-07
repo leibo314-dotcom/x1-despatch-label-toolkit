@@ -39,11 +39,11 @@ def detect_document_type(pdf_path: Path) -> str:
             raise ValueError("The uploaded PDF has no pages.")
         first_page_text = pdf.pages[0].extract_text() or ""
 
-    if re.search(r"Assembly\s+(?:Medium\s+)?Drawing", first_page_text, re.IGNORECASE):
+    if re.search(r"\b(?:Short\s+)?Assembly\s+(?:(?:Short|Medium)\s+)?Drawing", first_page_text, re.IGNORECASE):
         return "assembly"
     if re.search(r"(?:^|\n)\s*Schedule(?:\s|$)", first_page_text, re.IGNORECASE):
         return "schedule"
-    raise ValueError("Unsupported PDF. Upload an X1 Schedule or Assembly (Detail) PDF.")
+    raise ValueError("Unsupported PDF. Upload an X1 Schedule or Assembly (Short or Detail) PDF.")
 
 
 def item_heading_words(words: List[dict], page_width: float) -> List[dict]:

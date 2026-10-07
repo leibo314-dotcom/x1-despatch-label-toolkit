@@ -8,16 +8,18 @@ from PIL import Image, ImageDraw
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from features.item_labels.render import label_box, fit_field, make_labels, PRINT_INSET
+from features.item_labels.render import (
+    label_box, fit_field, make_labels, PRINT_INSET, BODY_WIDTH, DESC_SIZE, DESC_HEIGHT,
+)
 from features.item_labels.source import read_labels
 from features.item_labels.service import generate_item_labels
 
 
-def source(path, count=2, assembly=False):
+def source(path, count=2, assembly=False, title=None):
     c = canvas.Canvas(str(path), pagesize=A4)
     for number in range(1, count+1):
         c.setFont('Helvetica', 10)
-        c.drawString(25, 815, 'Assembly Drawing' if assembly else 'Schedule')
+        c.drawString(25, 815, title or ('Assembly Drawing' if assembly else 'Schedule'))
         c.drawString(410, 815, 'Quote No. 50364')
         c.setFont('Helvetica-Bold', 10)
         c.drawString(230, 740, f'#{number} MASTER BED D{number:02d}')
@@ -49,6 +51,31 @@ def test_source_fields_and_one_label_per_item_not_quantity(tmp_path, assembly):
     assert items[0].colour=='AEONOX Black'
     info=generate_item_labels(src,tmp_path/'labels.pdf',tmp_path/'work')
     assert info==dict(quote='50364',items=2,pages=1)
+    with pymupdf.open(tmp_path/'labels.pdf') as pdf:
+        text=pdf[0].get_text()
+        assert text.count('Item:')==2 and text.count('Desc:')==2
+        assert all(field not in text for field in ('Colour:', 'Suite:', 'Flash:', 'WAN:'))
+        assert len(pdf[0].get_image_info())==4  # Original logo and item drawing, per label.
+
+
+@pytest.mark.parametrize('title', [
+    'Assembly Drawing (Short)', 'Assembly Short Drawing',
+    'Short Assembly Drawing', 'Assembly Medium Drawing (Details)',
+])
+def test_assembly_variants_generate_labels_through_upload(tmp_path, monkeypatch, title):
+    import app
+    monkeypatch.delenv('BLOB_READ_WRITE_TOKEN',raising=False)
+    monkeypatch.setattr(app,'JOBS_DIR',tmp_path/'jobs')
+    src=source(tmp_path/'short.pdf',assembly=True,title=title)
+    client=app.app.test_client()
+    response=client.post('/generate',data={'independent_outputs':'1',
+        'pdf_file':(io.BytesIO(src.read_bytes()),'short-assembly.pdf')})
+    job=response.location.split('/result/')[1].split('?')[0]
+    result=client.post(f'/api/jobs/{job}/outputs/labels',json={})
+    assert result.status_code==200 and result.json['items']==2
+    download=client.get('/download-labels/'+job)
+    with pymupdf.open(stream=download.data,filetype='pdf') as pdf:
+        assert pdf[0].get_text().count('Quote 50364')==2
 
 
 def test_eleven_items_template_positions_and_blank_unused_slots(tmp_path):
@@ -88,18 +115,19 @@ def test_eleven_items_template_positions_and_blank_unused_slots(tmp_path):
 
 
 def test_long_values_shrink_and_keep_every_character(tmp_path):
-    values=['Master bedroom extra long description at rear of building',
-            'A'*90, 'Cill Support: 00470 - 20mm Sill Support for extra wide frame']
+    values=['Master bedroom extra long description at rear of building near the stairwell',
+            'A'*90, 'Unit 15 level 1 living room west elevation full height sliding door '*4]
     for value in values:
-        size,prefix,lines=fit_field('Desc:',value,179,14,font_name='Helvetica-Bold')
-        assert size<13.4
+        size,prefix,lines=fit_field('Desc:',value,BODY_WIDTH,DESC_HEIGHT,
+                                  maximum=DESC_SIZE,font_name='Helvetica-Bold',reserve_lines=1)
+        assert size<DESC_SIZE
         assert ''.join(''.join(lines).split())==''.join(value.split())
-        assert len(lines)*size*1.06<=14
+        assert (len(lines)+1)*size*1.06<=DESC_HEIGHT
     src=source(tmp_path/'source.pdf', count=1)
     quote,_,items=read_labels(src)
-    item=replace(items[0],desc=values[0],colour=values[1],flashing=values[2],wanz=values[2])
+    long_items=[replace(items[0],no=n+1,desc=value) for n,value in enumerate(values)]
     diagram=tmp_path/'diagram.png'; Image.new('RGB',(50,50),'white').save(diagram)
-    make_labels([item],{1:diagram},tmp_path/'long.pdf',quote)
+    make_labels(long_items,{item.no:diagram for item in long_items},tmp_path/'long.pdf',quote)
     with pymupdf.open(tmp_path/'long.pdf') as pdf:
         text=''.join(pdf[0].get_text().split())
         for value in values: assert ''.join(value.split()) in text
@@ -108,6 +136,13 @@ def test_long_values_shrink_and_keep_every_character(tmp_path):
                for line in b['lines'] for s in line['spans']]
         assert any('Master bedroom' in s['text'] and s['font']=='Helvetica-Bold' for s in spans)
         assert any(s['text'].strip() in ('1','Item: 1','Item:1') and s['font']=='Helvetica-Bold' for s in spans)
+
+
+def test_approved_description_has_two_lines_and_blank_third_line():
+    size,prefix,lines=fit_field('Desc:','U15/1 GF W01 ENTRY',BODY_WIDTH,DESC_HEIGHT,
+                              maximum=DESC_SIZE,font_name='Helvetica-Bold',reserve_lines=1)
+    assert size==DESC_SIZE and lines==['U15/1 GF','W01 ENTRY']
+    assert DESC_HEIGHT-len(lines)*size*1.06>=size*1.06
 
 
 @pytest.mark.parametrize('failure', ['docket','labels'])
