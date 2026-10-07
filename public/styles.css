@@ -31,7 +31,7 @@ body {
   z-index: 20;
   display: flex;
   min-height: 80px;
-  padding: 14px 20px 13px;
+  padding: 14px 76px 13px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -407,6 +407,27 @@ body {
   border-color: rgba(24, 92, 56, 0.22);
 }
 
+.banner-avatar {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  transform: translateY(-50%);
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+.banner-avatar img {
+  /* Show the original 88px circle at (7, 23), hiding its white screenshot margin. */
+  position: absolute;
+  left: -7.954545%;
+  top: -26.136364%;
+  width: 127.272727%;
+  height: 131.818182%;
+  max-width: none;
+}
+
 .validation-alert-heading {
   display: flex;
   align-items: flex-start;
@@ -480,7 +501,13 @@ body {
 @media (max-width: 720px) {
   .test-banner {
     min-height: 76px;
-    padding-inline: 14px;
+    padding-inline: 64px;
+  }
+
+  .banner-avatar {
+    right: 14px;
+    width: 32px;
+    height: 32px;
   }
 
   .shell {
