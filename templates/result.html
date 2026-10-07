@@ -16,7 +16,7 @@
 </div>
 <noscript><p>Enable JavaScript to generate both PDFs independently.</p></noscript>
 <section class="card checks-card"><h2>Checks</h2>
-{% for key, title in [('colour','Colour'),('door_width','Panel width / gap')] %}
+{% for key, title in [('colour','Colour')] %}
 <section class="check-row" data-feature="{{ key }}" data-state="pending">
 <header class="check-heading"><h3>{{ title }}</h3><span data-colour class="check-colour"></span><span class="tool-badge" data-status>Checking…</span></header>
 <details data-evidence hidden><summary>View issues</summary><div data-details></div></details>

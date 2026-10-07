@@ -10,6 +10,8 @@ LABEL_WIDTH = 280.8  # 5616 twips = 99.06 mm
 LABEL_HEIGHT = 161.55  # 3231 twips = 56.99125 mm
 X_POSITIONS = (13.25, 301.25)
 Y_POSITIONS = (17.10, 178.70, 340.25, 501.85, 663.40)
+CORNER_RADIUS = 8.5  # Actual rounded die-cut corners in the supplied Word file.
+PRINT_INSET = 2 * 72 / 25.4  # Minimum 2 mm from the label boundary, including ink.
 BLUE = colors.HexColor('#2e3477')
 REFERENCE = Path(__file__).parent / 'assets' / 'reference.png'
 
@@ -19,19 +21,19 @@ def label_box(index):
     return X_POSITIONS[position % 2], Y_POSITIONS[position // 2], LABEL_WIDTH, LABEL_HEIGHT
 
 
-def wrap_complete(value, size, width):
+def wrap_complete(value, size, width, font_name='Helvetica'):
     """Wrap every character, including single overlong product codes."""
     lines, current = [], ''
     for word in value.split():
         candidate = f'{current} {word}'.strip()
-        if stringWidth(candidate, 'Helvetica', size) <= width:
+        if stringWidth(candidate, font_name, size) <= width:
             current = candidate
             continue
         if current:
             lines.append(current)
             current = ''
         for character in word:
-            if current and stringWidth(current+character, 'Helvetica', size)>width:
+            if current and stringWidth(current+character, font_name, size)>width:
                 lines.append(current)
                 current = ''
             current += character
@@ -40,13 +42,13 @@ def wrap_complete(value, size, width):
     return lines or ['']
 
 
-def fit_field(label, value, width, height, maximum=13.4):
+def fit_field(label, value, width, height, maximum=13.4, font_name='Helvetica'):
     value = str(value or '-')
     # Shrink the value and its prefix together, without truncation or ellipses.
     size = maximum
     while True:
         prefix = stringWidth(label, 'Helvetica-Bold', size) + size*.16
-        lines = wrap_complete(value, size, max(width-prefix, .1))
+        lines = wrap_complete(value, size, max(width-prefix, .1), font_name)
         if len(lines)*size*1.06 <= height and prefix < width:
             return size, prefix, lines
         size *= .95
@@ -55,12 +57,13 @@ def fit_field(label, value, width, height, maximum=13.4):
 
 
 def draw_field(c, label, value, x, top, width, height):
-    size, prefix, lines = fit_field(label, value, width, height)
+    font_name = 'Helvetica-Bold' if label in ('Item:', 'Desc:') else 'Helvetica'
+    size, prefix, lines = fit_field(label, value, width, height, font_name=font_name)
     baseline = top-size*.82
     c.setFillColor(colors.black)
     c.setFont('Helvetica-Bold', size)
     c.drawString(x, baseline, label)
-    c.setFont('Helvetica', size)
+    c.setFont(font_name, size)
     for line in lines:
         c.drawString(x+prefix, baseline, line)
         baseline -= size*1.06
@@ -71,9 +74,15 @@ def draw_label(c, item, quote, diagram, index):
     y = A4[1]-top-height
     c.saveState()
     c.translate(x, y)
-    # Each label owns a fixed clipping area. No element can touch another label.
-    clip = c.beginPath(); clip.rect(0, 0, width, height)
+    # Match the rounded die-cut boundary, then inset ALL ink (including the
+    # blue header). Scale the layout uniformly instead of cropping any text.
+    clip = c.beginPath()
+    clip.roundRect(PRINT_INSET, PRINT_INSET, width-2*PRINT_INSET,
+                   height-2*PRINT_INSET, CORNER_RADIUS-PRINT_INSET)
     c.clipPath(clip, stroke=0)
+    layout_scale = min((width-2*PRINT_INSET)/width, (height-2*PRINT_INSET)/height)
+    c.translate((width-width*layout_scale)/2, (height-height*layout_scale)/2)
+    c.scale(layout_scale, layout_scale)
     header_height = 35.7
     c.setFillColor(BLUE)
     c.rect(0, height-header_height, width, header_height, fill=1, stroke=0)

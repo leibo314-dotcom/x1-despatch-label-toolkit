@@ -14,7 +14,8 @@ def unavailable(reason):
 
 
 def run_checks(pdf_path, job_dir, retry=False):
-    cache = Path(job_dir) / 'checks.json'
+    # New cache key so earlier width/gap results are never returned or run.
+    cache = Path(job_dir) / 'colour_checks.json'
     with _lock:
         if cache.is_file() and not retry:
             try:
@@ -27,7 +28,7 @@ def run_checks(pdf_path, job_dir, retry=False):
         except Exception:
             LOG.exception('Could not read check source')
             result = {name: unavailable('Could not read the source information. Please check the PDF manually.')
-                      for name in ('colour', 'door_width')}
+                      for name in ('colour',)}
         else:
             result = {}
             try:
@@ -36,12 +37,6 @@ def run_checks(pdf_path, job_dir, retry=False):
             except Exception:
                 LOG.exception('Colour check failed')
                 result['colour'] = unavailable('Colour check could not complete. Please review the colours manually.')
-            try:
-                from features.door_width.service import check_documents
-                result['door_width'] = check_documents(documents)
-            except Exception:
-                LOG.exception('Panel width check failed')
-                result['door_width'] = unavailable('Panel width check could not complete. Please review the drawing manually.')
         # Failure to cache a check must not hide its current result.
         try:
             temporary = cache.with_name('checks-' + uuid.uuid4().hex + '.json')

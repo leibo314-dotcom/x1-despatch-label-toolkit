@@ -9,7 +9,10 @@ The test UI saves one upload, then starts two independent requests:
 Neither output imports or calls the other generator. The label extraction
 geometry was copied from commit a9aaef9 into a label-owned module; later label
 changes cannot alter delivery. A failed output never deletes the shared input
-or the other PDF. Optional checks remain separate requests. Existing clients
+or the other PDF. The optional colour check remains a separate request. The
+panel width / gap feature has been removed from both UI and check execution;
+its older source modules remain inactive for possible future restoration.
+Existing clients
 without `independent_outputs` retain the original synchronous delivery flow.
 
 New independent jobs keep their input and PDFs under random job IDs in private
@@ -29,6 +32,11 @@ its exported PDF; no guessed vendor margins. Two columns, five rows.
 * Column starts from the left: 13.25 pt and 301.25 pt.
 * Row starts from the top: 17.10, 178.70, 340.25, 501.85, 663.40 pt.
 * Across first, then down; item 11 starts the next A4 sheet. Unused slots blank.
+* The Word outlines have 8.5 pt rounded corners. All ink, including the blue
+  header, stays at least 2 mm inside the die-cut boundary. A uniform scale fits
+  the entire original layout within this inset; no text is cut off to fit.
+* Item and Desc use bold for both the field name and complete value. Wrapping
+  and shrinking measure the actual bold font. Output v2 avoids old PDF caches.
 
 The dimensions and positions come from the label outlines in the rendered
 template, which differ from Word's text margins. No extra page title, footer,

@@ -16,7 +16,6 @@ function render(card,result) {
     const title=[item.item!=null?`Item ${item.item}`:'',item.pages?`Page ${item.pages.join(', ')}`:''].filter(Boolean).join(' · ');
     if(title)line(row,title,'strong');
     if(item.reason)line(row,item.reason);
-    if(item.expected_v661!=null)line(row,`Expected ${item.expected_v661} mm · Actual ${item.actual_v661.join(', ')} mm`);
   }
 }
 async function run(force=false) {

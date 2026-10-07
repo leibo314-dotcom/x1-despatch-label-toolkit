@@ -1,5 +1,9 @@
 # Test version structure
 
+Current change: panel width / gap is removed from the UI and background
+execution. Only Colour runs, using a new colour-only cache. The historical
+width-check notes below describe inactive code, not current app behavior.
+
 October 2026: the current test UI also generates independent Avery L7173 item
 labels. See [ITEM_LABELS.md](ITEM_LABELS.md) for the current upload/output flow
 and physical template measurements. The delivery renderer remains unchanged;

@@ -35,7 +35,7 @@ def get_job_paths(job_id: str) -> dict[str, Path]:
         "input_path": job_dir / "input.pdf",
         "output_path": job_dir / "despatch_label.pdf",
         "workdir": job_dir / "work",
-        "labels_path": job_dir / "item_labels.pdf",
+        "labels_path": job_dir / "item_labels_v2.pdf",
     }
 
 

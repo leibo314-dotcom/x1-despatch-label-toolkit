@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
-from features.item_labels.render import label_box, fit_field, make_labels
+from features.item_labels.render import label_box, fit_field, make_labels, PRINT_INSET
 from features.item_labels.source import read_labels
 from features.item_labels.service import generate_item_labels
 
@@ -63,7 +63,26 @@ def test_eleven_items_template_positions_and_blank_unused_slots(tmp_path):
             assert len(headers)==expected
             for idx,rect in enumerate(headers):
                 x,y,w,h=label_box(idx)
-                assert (rect.x0,rect.y0,rect.width)==pytest.approx((x,y,w),abs=.001)
+                scale=min((w-2*PRINT_INSET)/w,(h-2*PRINT_INSET)/h)
+                assert (rect.x0,rect.y0,rect.width)==pytest.approx(
+                    (x+(w-w*scale)/2,y+(h-h*scale)/2,w*scale),abs=.001)
+            # Measure all rendered ink against the actual rounded Word edges.
+            # This catches background/image leakage, not only text overflow.
+            import numpy as np
+            raster_scale=3
+            pix=p.get_pixmap(matrix=pymupdf.Matrix(raster_scale,raster_scale),alpha=False)
+            pixels=np.frombuffer(pix.samples,dtype=np.uint8).reshape(pix.height,pix.width,3)
+            yy,xx=np.where(pixels.min(axis=2)<245)
+            px,py=(xx+.5)/raster_scale,(yy+.5)/raster_scale
+            safe=np.zeros(len(px),dtype=bool)
+            for idx in range(expected):
+                x,y,w,h=label_box(idx)
+                # Rounded-outline signed distance: Word corner radius = 8.5 pt.
+                qx=np.abs(px-(x+w/2))-(w/2-8.5)
+                qy=np.abs(py-(y+h/2))-(h/2-8.5)
+                distance=np.hypot(np.maximum(qx,0),np.maximum(qy,0))+np.minimum(np.maximum(qx,qy),0)-8.5
+                safe |= distance <= -2*72/25.4 + 1/raster_scale
+            assert safe.all(), 'Printed pixels escaped the 2 mm safety inset'
         preferences=int(pdf.xref_get_key(pdf.pdf_catalog(),'ViewerPreferences')[1].split()[0])
         assert pdf.xref_get_key(preferences,'PrintScaling')==('name','/None')
 
@@ -72,7 +91,7 @@ def test_long_values_shrink_and_keep_every_character(tmp_path):
     values=['Master bedroom extra long description at rear of building',
             'A'*90, 'Cill Support: 00470 - 20mm Sill Support for extra wide frame']
     for value in values:
-        size,prefix,lines=fit_field('Desc:',value,179,14)
+        size,prefix,lines=fit_field('Desc:',value,179,14,font_name='Helvetica-Bold')
         assert size<13.4
         assert ''.join(''.join(lines).split())==''.join(value.split())
         assert len(lines)*size*1.06<=14
@@ -85,6 +104,10 @@ def test_long_values_shrink_and_keep_every_character(tmp_path):
         text=''.join(pdf[0].get_text().split())
         for value in values: assert ''.join(value.split()) in text
         assert '...' not in text
+        spans=[s for b in pdf[0].get_text('dict')['blocks'] if 'lines' in b
+               for line in b['lines'] for s in line['spans']]
+        assert any('Master bedroom' in s['text'] and s['font']=='Helvetica-Bold' for s in spans)
+        assert any(s['text'].strip() in ('1','Item: 1','Item:1') and s['font']=='Helvetica-Bold' for s in spans)
 
 
 @pytest.mark.parametrize('failure', ['docket','labels'])

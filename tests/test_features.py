@@ -62,7 +62,7 @@ def test_colour_consistency_and_missing_data():
     with pytest.raises(ValueError): require_one_quote([doc,replace(doc,quote='another')])
     with pytest.raises(ValueError): calculate_width('single',850,'coupled','sidelight')
 
-@pytest.mark.parametrize('failed',['colour','door_width'])
+@pytest.mark.parametrize('failed',[False,True])
 def test_checks_parse_once_and_isolate_failures(tmp_path,monkeypatch,failed):
     import services.documents as documents
     import features.colour.service as colour
@@ -70,18 +70,17 @@ def test_checks_parse_once_and_isolate_failures(tmp_path,monkeypatch,failed):
     from services.checks import run_checks
     calls=[];doc,_=single()
     monkeypatch.setattr(documents,'read_document',lambda *args:calls.append(1) or doc)
-    def result(name):
-        def check(docs):
-            assert docs==(doc,)
-            if name==failed: raise RuntimeError('deliberate failure')
-            return {'status':'success'}
-        return check
-    monkeypatch.setattr(colour,'check_colours',result('colour'))
-    monkeypatch.setattr(width,'check_documents',result('door_width'))
+    def check(docs):
+        assert docs==(doc,)
+        if failed: raise RuntimeError('deliberate failure')
+        return {'status':'success'}
+    monkeypatch.setattr(colour,'check_colours',check)
+    monkeypatch.setattr(width,'check_documents',lambda *args:pytest.fail('Removed width check was called'))
+    (tmp_path/'checks.json').write_text('{"door_width":{"status":"warning"}}')
     results=run_checks(tmp_path/'source.pdf',tmp_path)
     assert calls==[1]
-    assert results[failed]['status']=='manual'
-    assert results['colour' if failed=='door_width' else 'door_width']['status']=='success'
+    assert set(results)=={'colour'}
+    assert results['colour']['status']==('manual' if failed else 'success')
     assert run_checks(tmp_path/'source.pdf',tmp_path)==results
     assert calls==[1]
     run_checks(tmp_path/'source.pdf',tmp_path,True)
@@ -98,6 +97,8 @@ def test_delivery_never_calls_checks_and_download_survives_failure(tmp_path,monk
     assert response.status_code==302
     job=response.location.split('/result/')[1].split('?')[0]
     assert client.get(response.location).status_code==200
+    assert b'Panel width' not in client.get(response.location).data
+    assert b'data-feature="door_width"' not in client.get(response.location).data
     assert client.get('/download/'+job).data==b'%PDF-docket'
     monkeypatch.setattr(app,'run_checks',lambda *args:{'colour':{'status':'manual'},'door_width':{'status':'manual'}})
     assert client.post(f'/api/jobs/{job}/checks').status_code==200
