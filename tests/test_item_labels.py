@@ -8,8 +8,10 @@ from PIL import Image, ImageDraw
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase.pdfmetrics import stringWidth, getAscentDescent
 from features.item_labels.render import (
-    label_box, fit_field, make_labels, PRINT_INSET, BODY_WIDTH, DESC_SIZE, DESC_HEIGHT,
+    label_box, fit_field, make_labels, wrap_complete, PRINT_INSET, BODY_X, BODY_WIDTH,
+    ITEM_SIZE, DESC_SIZE, DESC_TOP, DESC_HEIGHT, DESC_MAX_LINES,
 )
 from features.item_labels.source import read_labels
 from features.item_labels.service import generate_item_labels
@@ -53,8 +55,8 @@ def test_source_fields_and_one_label_per_item_not_quantity(tmp_path, assembly):
     assert info==dict(quote='50364',items=2,pages=1)
     with pymupdf.open(tmp_path/'labels.pdf') as pdf:
         text=pdf[0].get_text()
-        assert text.count('Item:')==2 and text.count('Desc:')==2
-        assert all(field not in text for field in ('Colour:', 'Suite:', 'Flash:', 'WAN:'))
+        assert text.count('Item:')==2
+        assert all(field not in text for field in ('Desc:', 'Colour:', 'Suite:', 'Flash:', 'WAN:'))
         assert len(pdf[0].get_image_info())==4  # Original logo and item drawing, per label.
 
 
@@ -118,11 +120,13 @@ def test_long_values_shrink_and_keep_every_character(tmp_path):
     values=['Master bedroom extra long description at rear of building near the stairwell',
             'A'*90, 'Unit 15 level 1 living room west elevation full height sliding door '*4]
     for value in values:
-        size,prefix,lines=fit_field('Desc:',value,BODY_WIDTH,DESC_HEIGHT,
-                                  maximum=DESC_SIZE,font_name='Helvetica-Bold',reserve_lines=1)
+        size,prefix,lines=fit_field('',value,BODY_WIDTH,DESC_HEIGHT,
+                                  maximum=DESC_SIZE,font_name='Helvetica-Bold',max_lines=DESC_MAX_LINES)
         assert size<DESC_SIZE
+        assert prefix==0 and len(lines)<=3
         assert ''.join(''.join(lines).split())==''.join(value.split())
-        assert (len(lines)+1)*size*1.06<=DESC_HEIGHT
+        assert len(lines)*size*1.06<=DESC_HEIGHT
+        assert all(stringWidth(line,'Helvetica-Bold',size)<=BODY_WIDTH for line in lines)
     src=source(tmp_path/'source.pdf', count=1)
     quote,_,items=read_labels(src)
     long_items=[replace(items[0],no=n+1,desc=value) for n,value in enumerate(values)]
@@ -132,17 +136,94 @@ def test_long_values_shrink_and_keep_every_character(tmp_path):
         text=''.join(pdf[0].get_text().split())
         for value in values: assert ''.join(value.split()) in text
         assert '...' not in text
+        assert 'Desc:' not in text
         spans=[s for b in pdf[0].get_text('dict')['blocks'] if 'lines' in b
                for line in b['lines'] for s in line['spans']]
         assert any('Master bedroom' in s['text'] and s['font']=='Helvetica-Bold' for s in spans)
         assert any(s['text'].strip() in ('1','Item: 1','Item:1') and s['font']=='Helvetica-Bold' for s in spans)
+        # The rendered description rows use the whole left column, without an
+        # invisible prefix indent, and stay above the bottom and left of drawing.
+        for idx,item in enumerate(long_items):
+            x,y,w,h=label_box(idx)
+            scale=min((w-2*PRINT_INSET)/w,(h-2*PRINT_INSET)/h)
+            left=x+(w-w*scale)/2+BODY_X*scale
+            top=y+(h-h*scale)/2+DESC_TOP*scale
+            area=pymupdf.Rect(left-1,top-10,left+BODY_WIDTH*scale+1,top+DESC_HEIGHT*scale+1)
+            rows=[line for b in pdf[0].get_text('dict',clip=area)['blocks'] if 'lines' in b
+                  for line in b['lines'] if line['spans'][0]['origin'][1]>=top]
+            assert 1<=len(rows)<=3
+            assert ''.join(''.join(s['text'] for row in rows for s in row['spans']).split())==''.join(item.desc.split())
+            for row in rows:
+                assert row['bbox'][0]==pytest.approx(left,abs=.01)
+                assert row['bbox'][2]<=left+BODY_WIDTH*scale+.01
+                assert row['bbox'][3]<=top+DESC_HEIGHT*scale+.01
 
 
-def test_approved_description_has_two_lines_and_blank_third_line():
-    size,prefix,lines=fit_field('Desc:','U15/1 GF W01 ENTRY',BODY_WIDTH,DESC_HEIGHT,
-                              maximum=DESC_SIZE,font_name='Helvetica-Bold',reserve_lines=1)
-    assert size==DESC_SIZE and lines==['U15/1 GF','W01 ENTRY']
-    assert DESC_HEIGHT-len(lines)*size*1.06>=size*1.06
+@pytest.mark.parametrize('value,expected_lines', [
+    ('W1 ENTRY', ['W1 ENTRY']),
+    ('U15/1 GF W01 ENTRY', ['U15/1 GF W01','ENTRY']),
+    ('BEDROOM EAST FACING WINDOW', ['BEDROOM','EAST FACING','WINDOW']),
+])
+def test_wrap_one_two_or_three_lines_before_reducing_font(value,expected_lines):
+    size,prefix,lines=fit_field('',value,BODY_WIDTH,DESC_HEIGHT,
+                              maximum=DESC_SIZE,font_name='Helvetica-Bold',max_lines=DESC_MAX_LINES)
+    assert size==DESC_SIZE and lines==expected_lines and prefix==0
+
+
+def test_only_shrink_when_three_description_lines_are_insufficient():
+    value='MASTER BEDROOM NORTH FACING SLIDING DOOR'
+    assert len(wrap_complete(value,DESC_SIZE,BODY_WIDTH,'Helvetica-Bold'))>3
+    size,prefix,lines=fit_field('',value,BODY_WIDTH,DESC_HEIGHT,
+                              maximum=DESC_SIZE,font_name='Helvetica-Bold',max_lines=DESC_MAX_LINES)
+    assert size<DESC_SIZE and len(lines)==3
+    assert ' '.join(lines)==value
+    assert prefix==0
+
+
+def test_four_full_size_body_lines_fit_and_item_stays_on_one_line(tmp_path):
+    src=source(tmp_path/'source.pdf',count=1)
+    quote,_,items=read_labels(src)
+    diagram=tmp_path/'diagram.png'; Image.new('RGB',(50,50),'white').save(diagram)
+    item=replace(items[0],no=123,desc='BEDROOM EAST FACING WINDOW')
+    make_labels([item],{123:diagram},tmp_path/'four-lines.pdf',quote)
+    with pymupdf.open(tmp_path/'four-lines.pdf') as pdf:
+        x,y,w,h=label_box(0)
+        scale=min((w-2*PRINT_INSET)/w,(h-2*PRINT_INSET)/h)
+        area=pymupdf.Rect(x,y+40,x+190*scale,y+h)
+        rows=[line for b in pdf[0].get_text('dict',clip=area)['blocks'] if 'lines' in b
+              for line in b['lines']]
+        assert len(rows)==4
+        assert ''.join(s['text'] for s in rows[0]['spans']).replace(' ','')=='Item:123'
+        for idx,row in enumerate(rows):
+            for span in row['spans']:
+                assert span['font']=='Helvetica-Bold'
+                assert span['size']==pytest.approx((ITEM_SIZE if idx==0 else DESC_SIZE)*scale,abs=.001)
+        # MuPDF's line boxes include leading, so compare the font's actual
+        # ascent/descent bounds to ensure neighboring ink cannot overlap.
+        ink=[]
+        for row in rows:
+            span=row['spans'][0]
+            ascent,descent=getAscentDescent(span['font'],span['size'])
+            ink.append((span['origin'][1]-ascent,span['origin'][1]-descent))
+        assert all(ink[n][1]<ink[n+1][0] for n in range(3))
+
+
+def test_old_label_cache_does_not_hide_new_layout(tmp_path,monkeypatch):
+    import app
+    import features.item_labels.service as labels
+    monkeypatch.delenv('BLOB_READ_WRITE_TOKEN',raising=False)
+    monkeypatch.setattr(app,'JOBS_DIR',tmp_path)
+    job='a'*32
+    paths=app.get_job_paths(job)
+    paths['job_dir'].mkdir()
+    paths['input_path'].write_bytes(b'%PDF-input')
+    (paths['job_dir']/'item_labels_v3.pdf').write_bytes(b'%PDF-old-layout')
+    def generate(src,out,work):
+        out.write_bytes(b'%PDF-new-layout'); return {'items':1,'pages':1}
+    monkeypatch.setattr(labels,'generate_item_labels',generate)
+    client=app.app.test_client()
+    assert client.post(f'/api/jobs/{job}/outputs/labels',json={}).status_code==200
+    assert client.get('/download-labels/'+job).data==b'%PDF-new-layout'
 
 
 @pytest.mark.parametrize('failure', ['docket','labels'])

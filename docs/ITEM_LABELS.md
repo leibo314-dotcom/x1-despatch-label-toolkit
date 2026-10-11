@@ -35,22 +35,26 @@ its exported PDF; no guessed vendor margins. Two columns, five rows.
 * The Word outlines have 8.5 pt rounded corners. All ink, including the blue
   header, stays at least 2 mm inside the die-cut boundary. A uniform scale fits
   the entire original layout within this inset; no text is cut off to fit.
-* Item and Desc use bold for both the field name and complete value. Wrapping
-  and shrinking measure the actual bold font. Output v3 avoids old PDF caches.
+* Item and the description use bold. The Desc prefix is omitted. Wrapping
+  and shrinking measure the actual bold font. Output v4 avoids old PDF caches.
 
 The dimensions and positions come from the label outlines in the rendered
 template, which differ from Word's text margins. No extra page title, footer,
 cutting marks or page-number area shifts the labels. Print at 100% / Actual size.
 
-The approved reference's blue header, original LIDAR logo, Quote, Item, Desc,
+The approved reference's blue header, original LIDAR logo, Quote, Item, description,
 and right-side drawing are retained. Colour, Suite, Flash and WAN are omitted.
 Only the logo region of
 the supplied reference bitmap is shown through a PDF clip. Item data and Quote
-are searchable PDF text. Item uses a 17.5 pt maximum and Desc uses a 16.7 pt
-maximum before the safety inset scale. The description uses hanging lines in
-a fixed 64 pt tall area, reserving at least one additional blank line below
-the text even when shrinking longer descriptions. No ellipses or dropped
-words. One physical item means one label, regardless of Quantity. Schedule,
+are searchable PDF text. Item and description maxima are now 25.025 pt and
+23.881 pt before the safety inset scale (the previous sizes enlarged by 1.3,
+then another 10%). Both move upward. Item stays on one line; the description
+uses the entire 177 pt wide, 76 pt high left area, with at most three lines.
+First wrap at the maximum font size, preserving word boundaries where possible.
+Only shrink if those wrapped lines exceed three rows or the available height.
+Every description line starts at the left edge, with no prefix or hanging indent.
+Short descriptions stay at the largest size and leave unused rows blank.
+No ellipses or dropped words. One physical item means one label, regardless of Quantity. Schedule,
 Assembly Drawing (Short) and Assembly Medium Drawing (Details) use the same
 independent label output route.
 

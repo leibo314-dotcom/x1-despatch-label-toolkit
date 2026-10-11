@@ -15,11 +15,13 @@ PRINT_INSET = 2 * 72 / 25.4  # Minimum 2 mm from the label boundary, including i
 BLUE = colors.HexColor('#2e3477')
 REFERENCE = Path(__file__).parent / 'assets' / 'reference.png'
 BODY_X = 8
-BODY_WIDTH = 156
-ITEM_SIZE = 17.5
-DESC_SIZE = 16.7
-DESC_TOP = 82
-DESC_HEIGHT = 64
+BODY_WIDTH = 177  # Leaves a 6 pt gap before the drawing area at x=191.
+ITEM_SIZE = 17.5 * 1.3 * 1.1
+DESC_SIZE = 16.7 * 1.3 * 1.1
+ITEM_TOP = 48
+DESC_TOP = 74
+DESC_HEIGHT = 76
+DESC_MAX_LINES = 3
 
 
 def label_box(index):
@@ -48,28 +50,31 @@ def wrap_complete(value, size, width, font_name='Helvetica'):
     return lines or ['']
 
 
-def fit_field(label, value, width, height, maximum=13.4, font_name='Helvetica', reserve_lines=0):
+def fit_field(label, value, width, height, maximum=13.4, font_name='Helvetica', max_lines=None):
     value = str(value or '-')
-    # Shrink the value and its prefix together, without truncation or ellipses.
+    # Wrap at the largest font first. Shrink only if the wrapped text exceeds
+    # the available rows or height; never truncate or add ellipses.
     size = maximum
     while True:
-        prefix = stringWidth(label, 'Helvetica-Bold', size) + size*.16
+        prefix = stringWidth(label, 'Helvetica-Bold', size) + size*.16 if label else 0
         lines = wrap_complete(value, size, max(width-prefix, .1), font_name)
-        if (len(lines)+reserve_lines)*size*1.06 <= height and prefix < width:
+        if (len(lines)*size*1.06 <= height and prefix < width
+                and (max_lines is None or len(lines) <= max_lines)):
             return size, prefix, lines
         size *= .95
         if size < .3:
-            raise ValueError(f'The {label} value is too long to fit on a label.')
+            raise ValueError(f'The {label or "description"} value is too long to fit on a label.')
 
 
-def draw_field(c, label, value, x, top, width, height, maximum=13.4, reserve_lines=0):
-    font_name = 'Helvetica-Bold' if label in ('Item:', 'Desc:') else 'Helvetica'
+def draw_field(c, label, value, x, top, width, height, maximum=13.4, max_lines=None):
+    font_name = 'Helvetica-Bold'
     size, prefix, lines = fit_field(label, value, width, height, maximum=maximum,
-                                  font_name=font_name, reserve_lines=reserve_lines)
+                                  font_name=font_name, max_lines=max_lines)
     baseline = top-size*.82
     c.setFillColor(colors.black)
     c.setFont('Helvetica-Bold', size)
-    c.drawString(x, baseline, label)
+    if label:
+        c.drawString(x, baseline, label)
     c.setFont(font_name, size)
     for line in lines:
         c.drawString(x+prefix, baseline, line)
@@ -103,12 +108,12 @@ def draw_label(c, item, quote, diagram, index):
     title_size = min(24, 164/stringWidth(title, 'Helvetica-Bold', 1))
     c.setFillColor(colors.white); c.setFont('Helvetica-Bold', title_size)
     c.drawRightString(width-6, height-header_height/2-title_size*.34, title)
-    # Approved two-field preview: bold, hanging description lines and room
-    # below for another line. Long descriptions shrink within this same box.
-    draw_field(c, 'Item:', str(item.no), BODY_X, height-59, BODY_WIDTH, 21,
-               maximum=ITEM_SIZE)
-    draw_field(c, 'Desc:', item.desc, BODY_X, height-DESC_TOP, BODY_WIDTH, DESC_HEIGHT,
-               maximum=DESC_SIZE, reserve_lines=1)
+    # Approved enlarged layout: one Item line plus up to three description
+    # lines. No Desc prefix or hanging indent: all lines use the full column.
+    draw_field(c, 'Item:', str(item.no), BODY_X, height-ITEM_TOP, BODY_WIDTH, 27,
+               maximum=ITEM_SIZE, max_lines=1)
+    draw_field(c, '', item.desc, BODY_X, height-DESC_TOP, BODY_WIDTH, DESC_HEIGHT,
+               maximum=DESC_SIZE, max_lines=DESC_MAX_LINES)
     reader = ImageReader(str(diagram))
     iw, ih = reader.getSize()
     available_w, available_h = 85, 102
