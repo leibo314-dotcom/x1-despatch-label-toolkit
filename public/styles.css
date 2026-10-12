@@ -182,8 +182,23 @@ body[data-page="upload"] .flash-list {
   margin: 0 auto;
 }
 
+body[data-page="result"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+body[data-page="result"] .test-banner,
+body[data-page="result"] .shell > * {
+  flex-shrink: 0;
+}
+
 body[data-page="result"] .shell {
-  padding-top: 64px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 32px 0 56px;
 }
 
 @media (max-width: 720px) {
@@ -196,7 +211,7 @@ body[data-page="result"] .shell {
   }
 
   body[data-page="result"] .shell {
-    padding-top: 32px;
+    padding: 28px 0 44px;
   }
 }
 
