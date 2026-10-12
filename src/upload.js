@@ -35,6 +35,7 @@ function showStatus(message, percentage = null) {
 }
 
 function restoreForm(message) {
+  window.X1Scenery?.reset();
   submitButton.disabled = false;
   submitButton.textContent = "Generate PDFs";
   showStatus(message, 0);
@@ -58,6 +59,7 @@ if (form?.dataset.blobUploadEnabled === "true") {
       return;
     }
 
+    window.X1Scenery?.start();
     submitButton.disabled = true;
     submitButton.textContent = "Working...";
     showStatus("Uploading PDF...", 0);

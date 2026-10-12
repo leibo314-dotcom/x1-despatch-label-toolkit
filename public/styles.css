@@ -11,7 +11,7 @@
   --shadow: 0 18px 36px rgba(22, 24, 29, 0.1), 0 2px 5px rgba(22, 24, 29, 0.05);
 }
 
-html:is([data-theme="tekapo"], [data-theme="sakura"]) {
+html:is([data-theme="tekapo"], [data-theme="tekapo-minimal"], [data-theme="sakura"]) {
   --bg: #c3d8e1;
   --panel: rgba(225, 240, 249, 0.28);
   --text: #102031;
@@ -50,7 +50,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) body {
   background-color: var(--bg);
   background-image: linear-gradient(180deg, rgba(248, 250, 252, 0.2), rgba(246, 250, 252, 0.06)),
     var(--scenery-image);
@@ -146,7 +146,7 @@ body {
   padding: 111px 0 72px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .shell {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .shell {
   width: min(1100px, calc(100% - 48px));
   padding: 100px 0 80px;
 }
@@ -159,7 +159,7 @@ body {
   text-align: center;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .hero {
   margin-bottom: 40px;
 }
 
@@ -173,7 +173,7 @@ body {
   text-transform: uppercase;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .eyebrow {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .eyebrow {
   color: var(--muted);
 }
 
@@ -187,7 +187,7 @@ body {
   line-height: 1.38;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .hero h1 {
   max-width: 1000px;
   font-size: clamp(2.08rem, 3.45vw, 3.1rem);
   font-weight: 720;
@@ -203,7 +203,7 @@ body {
   font-size: 0.95rem;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .lede {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .lede {
   max-width: 870px;
   font-size: 1.05rem;
   line-height: 1.6;
@@ -225,7 +225,7 @@ body {
   -webkit-backdrop-filter: blur(24px) saturate(112%);
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .card {
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   backdrop-filter: blur(18px) saturate(108%);
@@ -234,7 +234,7 @@ body {
 
 /* 80% of the Standard card's 758px width, with a naturally compact height.
    Keep text and controls readable instead of scaling or clipping the content. */
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-card {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .upload-card {
   width: min(606.4px, calc(80vw - 32px));
   padding: 28px 24px 0;
 }
@@ -247,7 +247,7 @@ body {
   gap: 24px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .card-header {
   margin-bottom: 18px;
 }
 
@@ -259,7 +259,7 @@ body {
   letter-spacing: 0.17em;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .section-kicker {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .section-kicker {
   margin: 0 0 10px;
   color: var(--muted);
   font-size: 0.6875rem;
@@ -274,7 +274,7 @@ body {
   letter-spacing: -0.035em;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header h2 {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .card-header h2 {
   font-size: 1.25rem;
   font-weight: 720;
   line-height: 26px;
@@ -285,7 +285,7 @@ body {
   gap: 0;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-form {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .upload-form {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -304,7 +304,7 @@ body {
   transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker {
   min-height: 60px;
   padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.36);
@@ -319,8 +319,8 @@ body {
   background: rgba(255, 255, 255, 0.56);
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:hover,
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:focus-within {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker:hover,
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker:focus-within {
   background: rgba(255, 255, 255, 0.3);
 }
 
@@ -354,7 +354,7 @@ body {
   white-space: nowrap;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker-name {
   color: var(--text);
   font-size: 0.875rem;
 }
@@ -397,7 +397,7 @@ body {
   line-height: 1.5;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .dropzone-copy {
   margin: 14px 0 18px;
   color: var(--muted);
   font-size: 0.75rem;
@@ -414,7 +414,7 @@ body {
   border-top: 1px solid rgba(46, 49, 54, 0.13);
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .form-footer {
   min-height: 80px;
   margin: 0 -24px;
   padding: 17px 24px;
@@ -430,7 +430,7 @@ body {
   gap: 10px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .format-list {
   gap: 8px;
 }
 
@@ -448,7 +448,7 @@ body {
   font-weight: 480;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .format-list span {
   min-height: 36px;
   padding: 7px 8px;
   gap: 6px;
@@ -540,7 +540,7 @@ body {
   transition: background 0.18s ease, transform 0.18s ease;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .primary-btn {
   min-width: 136px;
   min-height: 44px;
   padding: 12px 16px;
@@ -784,59 +784,59 @@ body {
     background-position: center, 12% center;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .shell {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .shell {
     width: min(100% - 28px, 950px);
     padding: 48px 0 44px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .hero {
     margin-bottom: 32px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .eyebrow {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .eyebrow {
     margin-bottom: 21px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .hero h1 {
     font-size: clamp(1.85rem, 7.5vw, 2.65rem);
     line-height: 1.22;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 br {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .hero h1 br {
     display: none;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .card {
     border-radius: 8px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-card {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .upload-card {
     width: min(606.4px, calc(80vw - 19.2px));
     padding: 24px 20px 0;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .lede {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .lede {
     font-size: 0.95rem;
     line-height: 1.55;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker-name {
     max-width: calc(100% - 34px);
     font-size: 0.8125rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .dropzone-copy {
     font-size: 0.75rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .form-footer {
     margin-inline: -20px;
     padding: 16px 20px;
     align-items: stretch;
     flex-direction: column;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .primary-btn {
     width: 100%;
     min-height: 44px;
   }
@@ -859,26 +859,26 @@ body {
 }
 
 @media (max-width: 460px) {
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .file-picker {
     min-height: 60px;
     padding-inline: 12px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .format-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     align-items: stretch;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .format-list span {
     width: auto;
     min-height: 36px;
     padding: 7px 8px;
     font-size: 0.6875rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span:nth-child(2) {
+  :where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .format-list span:nth-child(2) {
     grid-column: 1 / -1;
     grid-row: 2;
   }
@@ -891,7 +891,7 @@ body {
 .tool-heading h2 { margin: 0; }
 .tool-badge { border-radius: 24px; background: #eee9e9; padding: 7px 12px; font-size: 13px; white-space: nowrap; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-badge {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .tool-badge {
   border: 1px solid rgba(255, 255, 255, 0.8);
   background: rgba(235, 242, 247, 0.85);
 }
@@ -902,8 +902,8 @@ body {
 .tool-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 20px; }
 .tool-actions a, .job-footer a { color: #842a46; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-actions a,
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .job-footer a {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .tool-actions a,
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .job-footer a {
   color: var(--accent);
 }
 
@@ -911,14 +911,14 @@ body {
 .tool-detail p { margin: 8px 0 0; }
 .tool-note { font-size: 13px; color: #65616a; line-height: 1.6; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-note {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .tool-note {
   color: var(--muted);
 }
 
 .tool-intro { display: grid; grid-template-columns: repeat(3,1fr); gap: 30px; margin-top: 30px; }
 .tool-intro p { color: #65616a; line-height: 1.6; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-intro p {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .tool-intro p {
   color: var(--muted);
 }
 
@@ -926,7 +926,7 @@ body {
 .job-footer form { margin-top: 20px; }
 .secondary-btn { border: 1px solid #b8a9af; border-radius: 8px; padding: 10px 16px; background: white; color: #683346; cursor: pointer; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .secondary-btn {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .secondary-btn {
   border: 1px solid rgba(111, 14, 39, 0.25);
   border-radius: 11px;
   padding: 11px 16px;
@@ -951,7 +951,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .back-link { text-align: center; margin-top: 24px; }
 .back-link a { color: #83122f; }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .back-link a {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) .back-link a {
   display: inline-block;
   padding: 10px 18px;
   border: 1px solid rgba(255, 255, 255, 0.85);
@@ -971,23 +971,215 @@ button:disabled { opacity: .6; cursor: wait; }
 @media(max-width:680px) { .output-grid { grid-template-columns: 1fr; } }
 @media(max-width:680px) { .docket-ready { flex-direction: column; align-items: flex-start; } .check-heading { flex-wrap: wrap; } .check-colour { max-width: 100%; } }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) a:focus-visible,
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) button:focus-visible,
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) summary:focus-visible {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) a:focus-visible,
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) button:focus-visible,
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) summary:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) body > .shell > .card:only-child {
   padding-bottom: 32px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child a {
+:where(html[data-theme="tekapo"], html[data-theme="tekapo-minimal"], html[data-theme="sakura"]) body > .shell > .card:only-child a {
   color: var(--accent);
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  html:is([data-theme="tekapo"], [data-theme="sakura"]) {
+  html:is([data-theme="tekapo"], [data-theme="tekapo-minimal"], [data-theme="sakura"]) {
     --panel: rgba(255, 255, 255, 0.95);
+  }
+}
+
+/* Minimal keeps only the two primary actions on the upload screen. */
+.scenery-backdrop {
+  display: none;
+}
+
+html[data-theme="tekapo-minimal"] body {
+  isolation: isolate;
+}
+
+html[data-theme="tekapo-minimal"] .scenery-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scenery-dusk,
+.scenery-night {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.scenery-dusk {
+  background: linear-gradient(180deg, rgba(42, 38, 101, 0.42), rgba(212, 103, 70, 0.35) 48%, rgba(23, 46, 79, 0.46));
+  mix-blend-mode: multiply;
+}
+
+.scenery-night {
+  background: url("/tekapo-night.webp") center / cover no-repeat;
+}
+
+html[data-theme="tekapo-minimal"] body[data-page="upload"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+html[data-theme="tekapo-minimal"] body[data-page="upload"] .shell {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 40px 0 120px;
+}
+
+html[data-theme="tekapo-minimal"] body[data-page="upload"] .hero,
+html[data-theme="tekapo-minimal"] .upload-card .card-header,
+html[data-theme="tekapo-minimal"] .upload-card .dropzone-copy,
+html[data-theme="tekapo-minimal"] .upload-card .format-list {
+  display: none;
+}
+
+html[data-theme="tekapo-minimal"] .upload-card {
+  margin: 0;
+  padding: 24px;
+}
+
+html[data-theme="tekapo-minimal"] .upload-form {
+  gap: 16px;
+}
+
+html[data-theme="tekapo-minimal"] .file-picker {
+  min-height: 64px;
+}
+
+html[data-theme="tekapo-minimal"] .form-footer {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  justify-content: flex-end;
+  border: 0;
+  background: transparent;
+}
+
+html[data-theme="tekapo-minimal"] .upload-status {
+  padding: 0;
+}
+
+html[data-theme="tekapo-minimal"] .file-picker-name,
+html[data-theme="tekapo-minimal"] .upload-status,
+html[data-theme="tekapo-minimal"] .tool-note {
+  color: inherit;
+}
+
+html[data-theme="tekapo-minimal"] .file-picker-icon,
+html[data-theme="tekapo-minimal"] .file-picker-icon::before {
+  border-color: currentColor;
+}
+
+html[data-theme="tekapo-minimal"] [data-output-status] {
+  color: var(--text);
+}
+
+html[data-theme="tekapo-minimal"] .check-row summary {
+  color: inherit;
+  text-decoration: underline;
+}
+
+html[data-theme="tekapo-minimal"] .flash-list {
+  width: min(606.4px, 100%);
+  margin: 0;
+}
+
+/* One fixed-camera cycle, shared by upload and result pages. Only light changes;
+   the mountain ridge and lake stay aligned through the crossfade. */
+html[data-theme="tekapo-minimal"][data-scenery="running"] .scenery-dusk {
+  animation: tekapo-dusk 16s linear infinite;
+  animation-delay: var(--scenery-delay, 0s);
+}
+
+html[data-theme="tekapo-minimal"][data-scenery="running"] .scenery-night {
+  animation: tekapo-night 16s ease-in-out infinite;
+  animation-delay: var(--scenery-delay, 0s);
+}
+
+html[data-theme="tekapo-minimal"][data-scenery="running"] .card {
+  animation: tekapo-glass 16s ease-in-out infinite;
+  animation-delay: var(--scenery-delay, 0s);
+}
+
+html[data-theme="tekapo-minimal"][data-scenery="running"] .hero h1,
+html[data-theme="tekapo-minimal"][data-scenery="running"] .hero .eyebrow,
+html[data-theme="tekapo-minimal"][data-scenery="running"] .hero .lede {
+  animation: tekapo-copy 16s ease-in-out infinite;
+  animation-delay: var(--scenery-delay, 0s);
+}
+
+@keyframes tekapo-dusk {
+  0%, 100% { opacity: 0; }
+  22%, 78% { opacity: 1; }
+  42%, 60% { opacity: 0.3; }
+}
+
+@keyframes tekapo-night {
+  0%, 12%, 100% { opacity: 0; }
+  40%, 60% { opacity: 1; }
+  88% { opacity: 0; }
+}
+
+@keyframes tekapo-glass {
+  0%, 12%, 100% { background-color: var(--panel); color: var(--text); }
+  40%, 60% { background-color: rgba(32, 59, 83, 0.4); color: #f5f8ff; }
+  88% { background-color: var(--panel); color: var(--text); }
+}
+
+@keyframes tekapo-copy {
+  0%, 12%, 100% { color: var(--text); text-shadow: 0 1px 14px rgba(255, 255, 255, 0.6); }
+  40%, 60% { color: #f5f8ff; text-shadow: 0 1px 14px rgba(3, 12, 29, 0.8); }
+  88% { color: var(--text); text-shadow: 0 1px 14px rgba(255, 255, 255, 0.6); }
+}
+
+@media (max-width: 720px) {
+  html[data-theme="tekapo-minimal"] .theme-picker select {
+    font-size: 11px;
+  }
+
+  html[data-theme="tekapo-minimal"] body[data-page="upload"] .shell {
+    padding-bottom: 116px;
+  }
+
+  html[data-theme="tekapo-minimal"] .upload-card {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .scenery-dusk,
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .scenery-night,
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .card,
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .hero h1,
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .hero .eyebrow,
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .hero .lede {
+    animation: none;
+  }
+
+  .scenery-dusk,
+  .scenery-night {
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme="tekapo-minimal"][data-scenery="running"] .card {
+    animation: none;
   }
 }

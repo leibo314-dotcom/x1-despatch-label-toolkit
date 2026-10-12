@@ -1,6 +1,18 @@
 const job = document.querySelector('[data-job]').dataset.job;
+const cards = [...document.querySelectorAll('[data-output]')];
+let pending = 0;
+
+function updateScenery() {
+  if (cards.some((card) => card.dataset.state === 'error')) {
+    window.X1Scenery?.reset();
+  } else if (pending === 0) {
+    window.X1Scenery?.complete();
+  }
+}
+
 async function generate(card, retry = false) {
   if (card.dataset.ready === 'true') return;
+  pending += 1;
   const badge = card.querySelector('[data-output-status]');
   const message = card.querySelector('[data-output-message]');
   const retryButton = card.querySelector('[data-output-retry]');
@@ -20,10 +32,18 @@ async function generate(card, retry = false) {
     card.dataset.state = 'error'; badge.textContent = 'Could not generate';
     message.textContent = error.message || 'Generation failed. Please retry.';
     retryButton.hidden = false;
+  } finally {
+    pending -= 1;
+    updateScenery();
   }
 }
 // Dispatch separately: either result stays usable if the other request fails.
-for (const card of document.querySelectorAll('[data-output]')) {
-  card.querySelector('[data-output-retry]').addEventListener('click', () => generate(card, true));
+if (cards.some((card) => card.dataset.ready !== 'true')) window.X1Scenery?.start();
+for (const card of cards) {
+  card.querySelector('[data-output-retry]').addEventListener('click', () => {
+    window.X1Scenery?.start();
+    generate(card, true);
+  });
   generate(card);
 }
+updateScenery();
