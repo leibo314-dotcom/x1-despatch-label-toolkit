@@ -11,6 +11,29 @@
   --shadow: 0 18px 36px rgba(22, 24, 29, 0.1), 0 2px 5px rgba(22, 24, 29, 0.05);
 }
 
+html:is([data-theme="tekapo"], [data-theme="sakura"]) {
+  --bg: #c3d8e1;
+  --text: #102031;
+  --muted: #49596a;
+  --line: rgba(42, 68, 86, 0.15);
+  --tool-line: rgba(42, 68, 86, 0.15);
+  --error-bg: rgba(255, 239, 236, 0.94);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 18px 48px rgba(32, 68, 89, 0.15), 0 2px 6px rgba(32, 68, 89, 0.06);
+  --scenery-image: url("/tekapo-background.webp");
+}
+
+html[data-theme="sakura"] {
+  --bg: #eadde2;
+  --panel: rgba(255, 250, 251, 0.73);
+  --text: #2b2430;
+  --muted: #645963;
+  --line: rgba(92, 57, 73, 0.14);
+  --tool-line: rgba(92, 57, 73, 0.14);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 18px 48px rgba(100, 62, 80, 0.12), 0 2px 6px rgba(100, 62, 80, 0.05);
+  --scenery-image: url("/sakura-background.webp");
+}
+
+
 * {
   box-sizing: border-box;
 }
@@ -26,12 +49,22 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body {
+  background-color: var(--bg);
+  background-image: linear-gradient(180deg, rgba(248, 250, 252, 0.2), rgba(246, 250, 252, 0.06)),
+    var(--scenery-image);
+  background-position: center, center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
 .test-banner {
   position: relative;
   z-index: 20;
   display: flex;
   min-height: 80px;
-  padding: 14px 76px 13px;
+  padding: 14px 196px 13px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -56,10 +89,65 @@ body {
   line-height: 1.25;
 }
 
+
+/* The title remains centered on desktop; the original avatar is independent. */
+.theme-picker {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  width: 156px;
+  display: grid;
+  gap: 4px;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.theme-picker > span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.theme-picker select {
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 7px;
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.1);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.theme-picker select:hover {
+  background-color: rgba(255, 255, 255, 0.17);
+}
+
+.theme-picker select:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.theme-picker option {
+  color: #202530;
+  background: #fff;
+}
+
 .shell {
   width: min(900px, calc(100% - 40px));
   margin: 0 auto;
   padding: 111px 0 72px;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .shell {
+  width: min(1100px, calc(100% - 48px));
+  padding: 100px 0 80px;
 }
 
 .hero {
@@ -68,6 +156,10 @@ body {
   align-items: center;
   flex-direction: column;
   text-align: center;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero {
+  margin-bottom: 40px;
 }
 
 .eyebrow {
@@ -80,6 +172,10 @@ body {
   text-transform: uppercase;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .eyebrow {
+  color: var(--muted);
+}
+
 .hero h1 {
   max-width: 840px;
   margin: 0;
@@ -90,10 +186,28 @@ body {
   line-height: 1.38;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 {
+  max-width: 1000px;
+  font-size: clamp(2.08rem, 3.45vw, 3.1rem);
+  font-weight: 720;
+  letter-spacing: -0.04em;
+  line-height: 1.3;
+  text-wrap: balance;
+  text-shadow: 0 1px 14px rgba(255, 255, 255, 0.6);
+}
+
 .lede {
   margin: 16px 0 0;
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .lede {
+  max-width: 870px;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  text-shadow: 0 1px 8px rgba(255, 255, 255, 0.85);
 }
 
 .card {
@@ -110,12 +224,25 @@ body {
   -webkit-backdrop-filter: blur(24px) saturate(112%);
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
+  width: min(950px, 100%);
+  padding: 32px 50px 0;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 32px;
+  backdrop-filter: blur(22px) saturate(108%);
+  -webkit-backdrop-filter: blur(22px) saturate(108%);
+}
+
 .card-header {
   display: flex;
   margin-bottom: 22px;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header {
+  margin-bottom: 24px;
 }
 
 .section-kicker {
@@ -126,11 +253,25 @@ body {
   letter-spacing: 0.17em;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .section-kicker {
+  margin: 0 0 16px;
+  color: #5b6876;
+  font-size: 0.84rem;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+}
+
 .card-header h2 {
   margin: 0;
   font-size: clamp(1.25rem, 2.1vw, 1.45rem);
   font-weight: 680;
   letter-spacing: -0.035em;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header h2 {
+  font-size: clamp(1.4rem, 2.1vw, 1.9rem);
+  font-weight: 720;
+  line-height: 1.2;
 }
 
 .upload-form {
@@ -153,10 +294,24 @@ body {
   transition: border-color 0.18s ease, background 0.18s ease;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
+  min-height: 90px;
+  padding: 0 28px;
+  border: 1px solid rgba(255, 255, 255, 0.96);
+  border-radius: 17px;
+  background: rgba(255, 255, 255, 0.48);
+  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.8), 0 6px 18px rgba(37, 64, 83, 0.06);
+}
+
 .file-picker:hover,
 .file-picker:focus-within {
   border-color: rgba(111, 14, 39, 0.42);
   background: rgba(255, 255, 255, 0.56);
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:hover,
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:focus-within {
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .file-picker.is-dragging {
@@ -187,6 +342,11 @@ body {
   font-weight: 430;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
+  color: #4f5e6f;
+  font-size: 1.22rem;
 }
 
 .file-picker input {
@@ -227,6 +387,12 @@ body {
   line-height: 1.5;
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
+  margin: 16px 0 20px;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
 .form-footer {
   display: flex;
   min-height: 104px;
@@ -238,11 +404,24 @@ body {
   border-top: 1px solid rgba(46, 49, 54, 0.13);
 }
 
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
+  min-height: 120px;
+  margin: 0 -50px;
+  padding: 24px 38px;
+  gap: 20px;
+  border-top: 1px solid var(--line);
+  background: rgba(237, 246, 251, 0.13);
+}
+
 .format-list {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
+  gap: 12px;
 }
 
 .format-list span {
@@ -257,6 +436,18 @@ body {
   background: rgba(255, 255, 255, 0.38);
   font-size: 0.75rem;
   font-weight: 480;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
+  min-height: 58px;
+  padding: 11px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  border-radius: 13px;
+  color: #26384b;
+  background: rgba(255, 255, 255, 0.53);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.85), 0 3px 10px rgba(37, 64, 83, 0.04);
+  font-size: 0.84rem;
+  font-weight: 500;
 }
 
 .format-icon {
@@ -336,6 +527,16 @@ body {
   text-decoration: none;
   cursor: pointer;
   transition: background 0.18s ease, transform 0.18s ease;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
+  min-width: 210px;
+  min-height: 60px;
+  padding: 15px 24px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.24), 0 7px 18px rgba(85, 9, 30, 0.2);
+  font-size: 1.03rem;
 }
 
 .primary-btn:hover {
@@ -501,7 +702,25 @@ body {
 @media (max-width: 720px) {
   .test-banner {
     min-height: 76px;
-    padding-inline: 64px;
+    padding-left: 142px;
+    padding-right: 64px;
+  }
+
+
+  .theme-picker {
+    left: 14px;
+    width: 118px;
+  }
+
+  .theme-picker select {
+    font-size: 12px;
+  }
+
+  .test-banner-badge {
+    font-size: 0.82rem;
+    letter-spacing: 0;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
   }
 
   .banner-avatar {
@@ -549,6 +768,64 @@ body {
   }
 }
 
+@media (max-width: 720px) {
+  html[data-theme="sakura"] body {
+    background-position: center, 12% center;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .shell {
+    width: min(100% - 28px, 950px);
+    padding: 48px 0 44px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero {
+    margin-bottom: 32px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .eyebrow {
+    margin-bottom: 21px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 {
+    font-size: clamp(1.85rem, 7.5vw, 2.65rem);
+    line-height: 1.22;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .hero h1 br {
+    display: none;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
+    padding: 27px 22px 0;
+    border-radius: 25px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .lede {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
+    font-size: 1.02rem;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
+    font-size: 0.85rem;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
+    margin-inline: -22px;
+    padding: 22px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
+    width: 100%;
+    min-height: 56px;
+  }
+}
+
 @media (max-width: 460px) {
   .file-picker {
     min-height: 64px;
@@ -564,25 +841,77 @@ body {
     width: 100%;
   }
 }
+
+@media (max-width: 460px) {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
+    min-height: 74px;
+    padding-inline: 17px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
+    gap: 8px;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
+    width: auto;
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 0.76rem;
+  }
+}
+
 :root { --tool-line: #e5dddd; }
 .tool-grid { display: grid; gap: 24px; }
 .tool-card { padding-bottom: 28px; }
 .tool-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .tool-heading h2 { margin: 0; }
 .tool-badge { border-radius: 24px; background: #eee9e9; padding: 7px 12px; font-size: 13px; white-space: nowrap; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-badge {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background: rgba(235, 242, 247, 0.85);
+}
+
 [data-state="success"] .tool-badge { background: #e0f0e5; color: #17592d; }
 [data-state="manual"] .tool-badge, [data-state="unsupported"] .tool-badge { background: #fff0ce; color: #745200; }
 [data-state="error"] .tool-badge, [data-state="warning"] .tool-badge { background: #fce0e0; color: #922727; }
 .tool-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; margin-top: 20px; }
 .tool-actions a, .job-footer a { color: #842a46; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-actions a,
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .job-footer a {
+  color: var(--accent);
+}
+
 .tool-detail { border-top: 1px solid var(--tool-line); padding: 14px 0; overflow-wrap: anywhere; }
 .tool-detail p { margin: 8px 0 0; }
 .tool-note { font-size: 13px; color: #65616a; line-height: 1.6; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-note {
+  color: var(--muted);
+}
+
 .tool-intro { display: grid; grid-template-columns: repeat(3,1fr); gap: 30px; margin-top: 30px; }
 .tool-intro p { color: #65616a; line-height: 1.6; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .tool-intro p {
+  color: var(--muted);
+}
+
 .job-footer { margin-top: 24px; }
 .job-footer form { margin-top: 20px; }
 .secondary-btn { border: 1px solid #b8a9af; border-radius: 8px; padding: 10px 16px; background: white; color: #683346; cursor: pointer; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .secondary-btn {
+  border: 1px solid rgba(111, 14, 39, 0.25);
+  border-radius: 11px;
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--accent);
+}
+
 [hidden] { display: none !important; }
 button:disabled { opacity: .6; cursor: wait; }
 @media (max-width: 680px) { .tool-intro { grid-template-columns: 1fr; gap: 8px; } .tool-heading { align-items: flex-start; flex-direction: column; } }
@@ -599,6 +928,18 @@ button:disabled { opacity: .6; cursor: wait; }
 .check-row summary { cursor: pointer; color: #83122f; }
 .back-link { text-align: center; margin-top: 24px; }
 .back-link a { color: #83122f; }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .back-link a {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 .output-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .output-card { padding: 28px; }
 .output-card h2 { font-size: 22px; margin: 0; }
@@ -607,3 +948,35 @@ button:disabled { opacity: .6; cursor: wait; }
 .output-card .primary-btn { margin-top: 10px; }
 @media(max-width:680px) { .output-grid { grid-template-columns: 1fr; } }
 @media(max-width:680px) { .docket-ready { flex-direction: column; align-items: flex-start; } .check-heading { flex-wrap: wrap; } .check-colour { max-width: 100%; } }
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) a:focus-visible,
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) button:focus-visible,
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) summary:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child {
+  padding-bottom: 32px;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child a {
+  color: var(--accent);
+}
+
+@media (max-width: 1000px) and (min-width: 721px) {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
+    padding-inline: 30px;
+    flex-wrap: wrap;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer .primary-btn {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html:is([data-theme="tekapo"], [data-theme="sakura"]) {
+    --panel: rgba(255, 255, 255, 0.95);
+  }
+}
