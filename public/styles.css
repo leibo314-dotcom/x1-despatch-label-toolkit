@@ -151,6 +151,47 @@ body {
   padding: 111px 0 72px;
 }
 
+/* Keep the upload card at the viewport centre in every theme, with space
+   for the banner and natural scrolling when the available height is short. */
+body[data-page="upload"] {
+  --upload-banner-height: 80px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+body[data-page="upload"] .test-banner {
+  flex-shrink: 0;
+}
+
+body[data-page="upload"] .shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: 32px 0 calc(32px + var(--upload-banner-height));
+}
+
+body[data-page="upload"] .upload-card {
+  flex-shrink: 0;
+}
+
+body[data-page="upload"] .flash-list {
+  width: min(606.4px, calc(80vw - 32px));
+  margin: 0 auto;
+}
+
+@media (max-width: 720px) {
+  body[data-page="upload"] {
+    --upload-banner-height: 76px;
+  }
+
+  body[data-page="upload"] .flash-list {
+    width: min(606.4px, calc(80vw - 19.2px));
+  }
+}
+
 :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .shell {
   width: min(1100px, calc(100% - 48px));
   padding: 100px 0 80px;
@@ -1015,11 +1056,11 @@ button:disabled { opacity: .6; cursor: wait; }
   outline-offset: 4px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body[data-page="error"] > .shell > .card:only-child {
   padding-bottom: 32px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child a {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) body[data-page="error"] > .shell > .card:only-child a {
   color: var(--accent);
 }
 
