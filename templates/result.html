@@ -3,6 +3,7 @@
 <title>FMI Delivery PDF — Test</title><script src="/theme.js"></script><link rel="stylesheet" href="/styles.css"></head><body data-page="result">
 {% include '_banner.html' %}
 <main class="shell" data-job="{{ job_id }}">
+<section class="hero original-theme-only"><p class="eyebrow">Your PDFs</p><h1>Delivery docket &amp; item labels</h1><p class="lede">{{ source_name }}</p></section>
 <div class="output-grid">
 {% for key, title, ready, endpoint in [('docket','Delivery Docket',docket_ready,'download'),('labels','Item Labels',labels_ready,'download_labels')] %}
 <section class="card output-card" data-output="{{ key }}" data-ready="{{ 'true' if ready else 'false' }}">

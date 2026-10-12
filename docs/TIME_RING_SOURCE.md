@@ -12,17 +12,19 @@ Although the original canvas label and a comment say ten seconds, its actual
 and playback ownership have been separated. The original click-to-pause control
 and infinite loop are omitted because this is non-interactive background scenery.
 
-The user explicitly requested **Standard only**. The animation requires
-`data-theme="standard"`. Lake Tekapo and Sakura keep their existing scenery and
-progress feedback. The initial theme (`tekapo` in `public/theme.js`), picker
-options, and saved theme preferences are unchanged. Historical dynamic themes (`tekapo-minimal` and
+The animation is **Simple only** (formerly named Standard). It still requires
+`data-theme="standard"` so saved preferences remain compatible. Original, Lake
+Tekapo and Sakura do not play the time ring. The initial theme (`tekapo` in
+`public/theme.js`) and saved theme preferences are unchanged. Historical dynamic themes (`tekapo-minimal` and
 `city-night`) were removed in 8e18d69 and are not restored. On the current baseline,
 the old optional `X1Scenery` upload/result hooks remained without an implementation.
-Those hooks now control this score. Real upload percentages and status/error text
-remain; the progress bar is visually hidden during Standard generation, including
-when motion is reduced. While the score is active, Standard cards use a 10% opaque
-white fill with no backdrop blur. The Standard upload button uses a 50% opaque red
-fill and fully opaque dark text; disabled styling keeps the label readable.
+Those hooks now control this score. Internal upload progress tracking remains.
+Simple hides the entire upload status panel and its layout space while busy,
+including when motion is reduced. The existing Working button indicates activity;
+errors remain visible after the form is restored, without a bar or percentage.
+Other themes retain their existing progress feedback. While the score is active,
+Simple cards use a 10% opaque white fill with no backdrop blur. All themes keep
+the original red upload button, including its hover, focus and disabled styles.
 
 One validated submit starts one clock. The result page resumes the same elapsed
 time, rather than starting again. A score already finished during upload stays
@@ -50,6 +52,13 @@ push this work to `master` or promote a deployment to Production. The baseline
 - Existing Python tests cover independent outputs, document extraction and PDF
   label geometry. Real delivery output is additionally compared to the unchanged
   baseline by extracted text and rendered page pixels during this change.
+
+The follow-up Simple/Original theme checks cover persistence of the former
+Standard preference, storage failures, Original's exclusion from the time ring,
+the entire hidden Simple progress panel (zero layout height), error/ready text
+without orphan percentages, and unchanged Tekapo/Sakura feedback. Original's
+desktop content geometry, fill, blur and type sizes match a rendered `d00de43`
+reference. See `THEMES.md` for the historical source and scope.
 
 Verified for this change: 15 JavaScript tests passed; 40 Python tests passed and
 3 optional real-sample tests skipped. A real Schedule produced five docket pages

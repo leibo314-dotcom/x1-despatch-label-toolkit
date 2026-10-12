@@ -103,7 +103,7 @@ test('failure cancels playback and storage; retry is a new single valid operatio
 });
 
 test('other themes, reduced motion, theme changes and back navigation stay clean', () => {
-  for (const theme of ['tekapo', 'sakura']) {
+  for (const theme of ['original', 'tekapo', 'sakura']) {
     const app = page({ theme });
     app.api.start();
     assert.equal(app.drawn.length, 0);

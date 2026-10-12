@@ -162,34 +162,42 @@ html[data-generation-animation] .shell { position: relative; z-index: 1; }
   pointer-events: none;
 }
 html:not([data-theme="standard"]) .generation-animation { display: none; }
-/* Let the time ring remain sharp through the Standard generation cards. */
+/* Simple keeps the historical "standard" preference key. */
+/* Let the time ring remain sharp through the Simple generation cards. */
 html[data-theme="standard"][data-generation-animation] .card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-html[data-theme="standard"][data-generation-animation] [data-upload-progress],
-html[data-theme="standard"] .upload-form:has(.primary-btn:disabled) [data-upload-progress] {
+/* Simple uses the Working button for busy feedback, without a progress row.
+   Keep the status text available again for errors; never show orphan percentages. */
+html[data-theme="standard"] [data-upload-percent],
+html[data-theme="standard"] [data-upload-progress],
+html[data-theme="standard"] .upload-form:has(.primary-btn:disabled) .upload-status {
   display: none;
 }
 @media print {
   .generation-animation { display: none !important; }
 }
 
-/* Keep the upload card at the viewport centre in every theme, with space
+/* Original reuses the pre-18:00 layout and existing base glass styles.
+   Its introductory headings are hidden in the other themes. */
+html:not([data-theme="original"]) .original-theme-only { display: none; }
+
+/* Keep the upload card at the viewport centre in the newer themes, with space
    for the banner and natural scrolling when the available height is short. */
-body[data-page="upload"] {
+:where(html:not([data-theme="original"])) body[data-page="upload"] {
   --upload-banner-height: 80px;
   display: flex;
   flex-direction: column;
   min-height: 100svh;
 }
 
-body[data-page="upload"] .test-banner {
+:where(html:not([data-theme="original"])) body[data-page="upload"] .test-banner {
   flex-shrink: 0;
 }
 
-body[data-page="upload"] .shell {
+:where(html:not([data-theme="original"])) body[data-page="upload"] .shell {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -198,27 +206,27 @@ body[data-page="upload"] .shell {
   padding: 32px 0 calc(32px + var(--upload-banner-height));
 }
 
-body[data-page="upload"] .upload-card {
+:where(html:not([data-theme="original"])) body[data-page="upload"] .upload-card {
   flex-shrink: 0;
 }
 
-body[data-page="upload"] .flash-list {
+:where(html:not([data-theme="original"])) body[data-page="upload"] .flash-list {
   width: min(606.4px, calc(80vw - 32px));
   margin: 0 auto;
 }
 
-body[data-page="result"] {
+:where(html:not([data-theme="original"])) body[data-page="result"] {
   display: flex;
   flex-direction: column;
   min-height: 100svh;
 }
 
-body[data-page="result"] .test-banner,
-body[data-page="result"] .shell > * {
+:where(html:not([data-theme="original"])) body[data-page="result"] .test-banner,
+:where(html:not([data-theme="original"])) body[data-page="result"] .shell > * {
   flex-shrink: 0;
 }
 
-body[data-page="result"] .shell {
+:where(html:not([data-theme="original"])) body[data-page="result"] .shell {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -227,15 +235,15 @@ body[data-page="result"] .shell {
 }
 
 @media (max-width: 720px) {
-  body[data-page="upload"] {
+  :where(html:not([data-theme="original"])) body[data-page="upload"] {
     --upload-banner-height: 76px;
   }
 
-  body[data-page="upload"] .flash-list {
+  :where(html:not([data-theme="original"])) body[data-page="upload"] .flash-list {
     width: min(606.4px, calc(80vw - 19.2px));
   }
 
-  body[data-page="result"] .shell {
+  :where(html:not([data-theme="original"])) body[data-page="result"] .shell {
     padding: 28px 0 44px;
   }
 }
@@ -680,27 +688,6 @@ body[data-page="result"] .shell {
   opacity: 0.7;
   cursor: wait;
   transform: none;
-}
-
-/* Transparency belongs to the fill; keep the label fully opaque and legible. */
-html[data-theme="standard"] .upload-form .primary-btn {
-  color: #3d0817;
-  background: linear-gradient(180deg, rgba(150, 21, 58, 0.5) 0%, rgba(125, 15, 46, 0.5) 100%);
-  opacity: 1;
-}
-
-html[data-theme="standard"] .upload-form .primary-btn:hover:not(:disabled) {
-  background: linear-gradient(180deg, rgba(140, 18, 53, 0.5) 0%, rgba(112, 11, 40, 0.5) 100%);
-}
-
-html[data-theme="standard"] .upload-form .primary-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-html[data-theme="standard"] .upload-form .primary-btn:disabled {
-  border-style: dashed;
-  box-shadow: none;
 }
 
 .upload-status {
