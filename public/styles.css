@@ -13,23 +13,24 @@
 
 html:is([data-theme="tekapo"], [data-theme="sakura"]) {
   --bg: #c3d8e1;
+  --panel: rgba(225, 240, 249, 0.28);
   --text: #102031;
   --muted: #49596a;
   --line: rgba(42, 68, 86, 0.15);
   --tool-line: rgba(42, 68, 86, 0.15);
   --error-bg: rgba(255, 239, 236, 0.94);
-  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 18px 48px rgba(32, 68, 89, 0.15), 0 2px 6px rgba(32, 68, 89, 0.06);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 28px rgba(32, 68, 89, 0.1);
   --scenery-image: url("/tekapo-background.webp");
 }
 
 html[data-theme="sakura"] {
   --bg: #eadde2;
-  --panel: rgba(255, 250, 251, 0.73);
+  --panel: rgba(249, 232, 238, 0.3);
   --text: #2b2430;
   --muted: #645963;
   --line: rgba(92, 57, 73, 0.14);
   --tool-line: rgba(92, 57, 73, 0.14);
-  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.96), 0 18px 48px rgba(100, 62, 80, 0.12), 0 2px 6px rgba(100, 62, 80, 0.05);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 28px rgba(100, 62, 80, 0.09);
   --scenery-image: url("/sakura-background.webp");
 }
 
@@ -225,12 +226,17 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
-  width: min(950px, 100%);
-  padding: 32px 50px 0;
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  border-radius: 32px;
-  backdrop-filter: blur(22px) saturate(108%);
-  -webkit-backdrop-filter: blur(22px) saturate(108%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  backdrop-filter: blur(18px) saturate(108%);
+  -webkit-backdrop-filter: blur(18px) saturate(108%);
+}
+
+/* 80% of the Standard card's 758px width, with a naturally compact height.
+   Keep text and controls readable instead of scaling or clipping the content. */
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-card {
+  width: min(606.4px, calc(80vw - 32px));
+  padding: 28px 24px 0;
 }
 
 .card-header {
@@ -242,7 +248,7 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header {
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .section-kicker {
@@ -254,11 +260,11 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .section-kicker {
-  margin: 0 0 16px;
-  color: #5b6876;
-  font-size: 0.84rem;
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.6875rem;
   letter-spacing: 0.12em;
-  line-height: 1.3;
+  line-height: 14px;
 }
 
 .card-header h2 {
@@ -269,14 +275,18 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card-header h2 {
-  font-size: clamp(1.4rem, 2.1vw, 1.9rem);
+  font-size: 1.25rem;
   font-weight: 720;
-  line-height: 1.2;
+  line-height: 26px;
 }
 
 .upload-form {
   display: grid;
   gap: 0;
+}
+
+:where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-form {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .file-picker {
@@ -295,12 +305,12 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
-  min-height: 90px;
-  padding: 0 28px;
-  border: 1px solid rgba(255, 255, 255, 0.96);
-  border-radius: 17px;
-  background: rgba(255, 255, 255, 0.48);
-  box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.8), 0 6px 18px rgba(37, 64, 83, 0.06);
+  min-height: 60px;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 1px 3px rgba(37, 64, 83, 0.04);
 }
 
 .file-picker:hover,
@@ -311,7 +321,7 @@ body {
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:hover,
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker:focus-within {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .file-picker.is-dragging {
@@ -345,8 +355,8 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
-  color: #4f5e6f;
-  font-size: 1.22rem;
+  color: var(--text);
+  font-size: 0.875rem;
 }
 
 .file-picker input {
@@ -388,9 +398,9 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
-  margin: 16px 0 20px;
+  margin: 14px 0 18px;
   color: var(--muted);
-  font-size: 0.94rem;
+  font-size: 0.75rem;
 }
 
 .form-footer {
@@ -405,12 +415,12 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
-  min-height: 120px;
-  margin: 0 -50px;
-  padding: 24px 38px;
-  gap: 20px;
+  min-height: 80px;
+  margin: 0 -24px;
+  padding: 17px 24px;
+  gap: 16px;
   border-top: 1px solid var(--line);
-  background: rgba(237, 246, 251, 0.13);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .format-list {
@@ -421,7 +431,7 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
-  gap: 12px;
+  gap: 8px;
 }
 
 .format-list span {
@@ -439,14 +449,15 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
-  min-height: 58px;
-  padding: 11px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.95);
-  border-radius: 13px;
-  color: #26384b;
-  background: rgba(255, 255, 255, 0.53);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.85), 0 3px 10px rgba(37, 64, 83, 0.04);
-  font-size: 0.84rem;
+  min-height: 36px;
+  padding: 7px 8px;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 5px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.13);
+  box-shadow: none;
+  font-size: 0.6875rem;
   font-weight: 500;
 }
 
@@ -530,13 +541,13 @@ body {
 }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
-  min-width: 210px;
-  min-height: 60px;
-  padding: 15px 24px;
+  min-width: 136px;
+  min-height: 44px;
+  padding: 12px 16px;
   flex-shrink: 0;
-  border-radius: 13px;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.24), 0 7px 18px rgba(85, 9, 30, 0.2);
-  font-size: 1.03rem;
+  border-radius: 5px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.18), 0 3px 8px rgba(85, 9, 30, 0.14);
+  font-size: 0.8125rem;
 }
 
 .primary-btn:hover {
@@ -796,8 +807,12 @@ body {
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .card {
-    padding: 27px 22px 0;
-    border-radius: 25px;
+    border-radius: 8px;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .upload-card {
+    width: min(606.4px, calc(80vw - 19.2px));
+    padding: 24px 20px 0;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .lede {
@@ -806,23 +821,24 @@ body {
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker-name {
-    font-size: 1.02rem;
+    max-width: calc(100% - 34px);
+    font-size: 0.8125rem;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .dropzone-copy {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
-    margin-inline: -22px;
-    padding: 22px;
+    margin-inline: -20px;
+    padding: 16px 20px;
     align-items: stretch;
     flex-direction: column;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .primary-btn {
     width: 100%;
-    min-height: 56px;
+    min-height: 44px;
   }
 }
 
@@ -844,21 +860,27 @@ body {
 
 @media (max-width: 460px) {
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .file-picker {
-    min-height: 74px;
-    padding-inline: 17px;
+    min-height: 60px;
+    padding-inline: 12px;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    align-items: center;
-    flex-direction: row;
+    align-items: stretch;
   }
 
   :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span {
     width: auto;
-    min-height: 42px;
-    padding: 8px 10px;
-    font-size: 0.76rem;
+    min-height: 36px;
+    padding: 7px 8px;
+    font-size: 0.6875rem;
+  }
+
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .format-list span:nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 }
 
@@ -962,17 +984,6 @@ button:disabled { opacity: .6; cursor: wait; }
 
 :where(html[data-theme="tekapo"], html[data-theme="sakura"]) body > .shell > .card:only-child a {
   color: var(--accent);
-}
-
-@media (max-width: 1000px) and (min-width: 721px) {
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer {
-    padding-inline: 30px;
-    flex-wrap: wrap;
-  }
-
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"]) .form-footer .primary-btn {
-    margin-left: auto;
-  }
 }
 
 @media (prefers-reduced-transparency: reduce) {
