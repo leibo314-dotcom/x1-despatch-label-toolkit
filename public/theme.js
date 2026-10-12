@@ -1,7 +1,7 @@
 (() => {
   const storageKey = 'x1-page-theme';
   // Keep the saved Standard key: its user-facing name is now Simple.
-  const themes = new Set(['standard', 'original', 'tekapo', 'sakura']);
+  const themes = new Set(['standard', 'original', 'tekapo', 'sakura', 'cat']);
   let theme = 'tekapo';
 
   try {

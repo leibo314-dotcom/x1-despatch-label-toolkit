@@ -1,0 +1,74 @@
+/* Cat decoration never receives pointer input or changes card placement. */
+.x1-cat-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  contain: layout paint style;
+}
+.x1-cat-layer[hidden] { display: none !important; }
+.x1-cat-actor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.x1-cat-video,
+.x1-cat-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  background: transparent;
+}
+.x1-cat-video { visibility: hidden; }
+.x1-cat-video.is-current { visibility: visible; }
+.x1-cat-video.is-preparing { visibility: visible; opacity: 0; }
+.x1-cat-poster[hidden] { display: none !important; }
+.x1-cat-sound {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.x1-cat-sound[hidden] { display: none !important; }
+.x1-cat-sound.is-compact { display: grid; place-items: center; width: 32px; height: 32px; min-height: 32px; padding: 6px; }
+.x1-cat-sound:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .x1-cat-actor { will-change: auto; }
+}
+
+html[data-theme="cat"] body {
+  background: radial-gradient(ellipse at 50% 32%, #fffefa 0%, #faf7f2 62%, #f5f0e9 100%);
+}
+.cat-sound-host { display: none; }
+html[data-theme="cat"] .cat-sound-host {
+  position: absolute;
+  top: 50%;
+  left: 160px;
+  display: block;
+  transform: translateY(-50%);
+}
+html[data-theme="cat"] .theme-picker { width: 132px; }
+.cat-sound-host .x1-cat-sound { border-color: rgba(255, 255, 255, .22); background: rgba(255, 255, 255, .06); }
+.cat-sound-host .x1-cat-sound:hover { background: rgba(255, 255, 255, .17); }
+.x1-cat-sound svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 720px) {
+  html[data-theme="cat"] .theme-picker { width: 80px; }
+  html[data-theme="cat"] .cat-sound-host { left: 102px; }
+}
+@media print { .x1-cat-layer, .cat-sound-host { display: none !important; } }

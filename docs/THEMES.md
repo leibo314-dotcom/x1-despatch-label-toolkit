@@ -14,6 +14,13 @@
   theme change was `65a8f09` at 18:37:06 NZDT. The historical CSS was last changed
   at `f49171d` on 2026-10-08 and was still present unchanged in `d00de43`.
 - **Lake Tekapo** and **Sakura** keep their existing styles and feedback.
+- **猫咪** keeps Simple's compact card dimensions and positions on a warm neutral
+  background. A Maine Coon walks through the available space without covering
+  controls, and occasionally turns toward the viewer during entry. The small
+  speaker beside the theme picker enables optional, synchronized cat sounds;
+  each page starts muted. Motion pauses in hidden tabs and uses a static cat
+  when reduced motion is requested or transparent video is unavailable. Media
+  and calibration details are in `CAT_THEME_ASSETS.md`.
 
 Original restores the large introductory headings, source filename on the result
 page, 900px content width, 758px upload card, 70% opaque white fill, 24px blur,

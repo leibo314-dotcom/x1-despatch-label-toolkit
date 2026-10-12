@@ -248,7 +248,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   }
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .shell {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .shell {
   width: min(1100px, calc(100% - 48px));
   padding: 100px 0 80px;
 }
@@ -261,7 +261,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   text-align: center;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .hero {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .hero {
   margin-bottom: 40px;
 }
 
@@ -289,7 +289,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   line-height: 1.38;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .hero h1 {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .hero h1 {
   max-width: 1000px;
   font-size: clamp(2.08rem, 3.45vw, 3.1rem);
   font-weight: 720;
@@ -308,7 +308,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   font-size: 0.95rem;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .lede {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .lede {
   max-width: 870px;
   font-size: 1.05rem;
   line-height: 1.6;
@@ -342,7 +342,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
 
 /* All upload themes share the compact card dimensions and page placement.
    Standard keeps its original neutral colours and glass treatment. */
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .upload-card {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .upload-card {
   width: min(606.4px, calc(80vw - 32px));
   padding: 28px 24px 0;
 }
@@ -355,7 +355,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   gap: 24px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .card-header {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .card-header {
   margin-bottom: 18px;
 }
 
@@ -367,7 +367,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   letter-spacing: 0.17em;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .section-kicker {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .section-kicker {
   margin: 0 0 10px;
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
@@ -385,7 +385,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   letter-spacing: -0.035em;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .card-header h2 {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .card-header h2 {
   font-size: 1.25rem;
   font-weight: 720;
   line-height: 26px;
@@ -396,7 +396,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   gap: 0;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .upload-form {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .upload-form {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -415,7 +415,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .file-picker {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .file-picker {
   min-height: 60px;
   padding: 0 18px;
 }
@@ -468,7 +468,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   white-space: nowrap;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .file-picker-name {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .file-picker-name {
   font-size: 0.875rem;
 }
 
@@ -514,7 +514,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   line-height: 1.5;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .dropzone-copy {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .dropzone-copy {
   margin: 14px 0 18px;
   font-size: 0.75rem;
 }
@@ -534,7 +534,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   border-top: 1px solid rgba(46, 49, 54, 0.13);
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .form-footer {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .form-footer {
   min-height: 80px;
   margin: 0 -24px;
   padding: 17px 24px;
@@ -553,7 +553,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   gap: 10px;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .format-list {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .format-list {
   gap: 8px;
 }
 
@@ -571,7 +571,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   font-weight: 480;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .format-list span {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .format-list span {
   min-height: 36px;
   padding: 7px 8px;
   gap: 6px;
@@ -666,7 +666,7 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
   transition: background 0.18s ease, transform 0.18s ease;
 }
 
-:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .primary-btn {
+:where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .primary-btn {
   min-width: 136px;
   min-height: 44px;
   padding: 12px 16px;
@@ -918,12 +918,12 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
     background-position: center, 12% center;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .shell {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .shell {
     width: min(100% - 28px, 950px);
     padding: 48px 0 44px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .hero {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .hero {
     margin-bottom: 32px;
   }
 
@@ -931,12 +931,12 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
     margin-bottom: 21px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .hero h1 {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .hero h1 {
     font-size: clamp(1.85rem, 7.5vw, 2.65rem);
     line-height: 1.22;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .hero h1 br {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .hero h1 br {
     display: none;
   }
 
@@ -944,33 +944,33 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
     border-radius: 8px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .upload-card {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .upload-card {
     width: min(606.4px, calc(80vw - 19.2px));
     padding: 24px 20px 0;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .lede {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .lede {
     font-size: 0.95rem;
     line-height: 1.55;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .file-picker-name {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .file-picker-name {
     max-width: calc(100% - 34px);
     font-size: 0.8125rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .dropzone-copy {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .dropzone-copy {
     font-size: 0.75rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .form-footer {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .form-footer {
     margin-inline: -20px;
     padding: 16px 20px;
     align-items: stretch;
     flex-direction: column;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .primary-btn {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .primary-btn {
     width: 100%;
     min-height: 44px;
   }
@@ -993,26 +993,26 @@ html:not([data-theme="original"]) .original-theme-only { display: none; }
 }
 
 @media (max-width: 460px) {
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .file-picker {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .file-picker {
     min-height: 60px;
     padding-inline: 12px;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .format-list {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .format-list {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
     align-items: stretch;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .format-list span {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .format-list span {
     width: auto;
     min-height: 36px;
     padding: 7px 8px;
     font-size: 0.6875rem;
   }
 
-  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"]) .format-list span:nth-child(2) {
+  :where(html[data-theme="tekapo"], html[data-theme="sakura"], html[data-theme="standard"] body[data-page="upload"], html[data-theme="cat"] body[data-page="upload"]) .format-list span:nth-child(2) {
     grid-column: 1 / -1;
     grid-row: 2;
   }
