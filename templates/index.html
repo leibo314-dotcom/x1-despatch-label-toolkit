@@ -62,9 +62,8 @@
       </form>
     </section>
   </main>
-  {% if blob_upload_enabled %}
-    <script type="module" src="/upload.js"></script>
-  {% endif %}
+  {% include '_generation_animation.html' %}
+  <script type="module" src="/upload.js"></script>
   <script>
     const pdfInput = document.querySelector('#pdf_file');
     const filePicker = document.querySelector('.file-picker');

@@ -151,6 +151,22 @@ body {
   padding: 111px 0 72px;
 }
 
+/* The original white-paper canvas is scenery only, behind every page control. */
+html[data-generation-animation] .shell { position: relative; z-index: 1; }
+.generation-animation {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+html:not([data-theme="standard"]) .generation-animation { display: none; }
+html[data-generation-animation] [data-upload-progress]:indeterminate { visibility: hidden; }
+@media print {
+  .generation-animation { display: none !important; }
+}
+
 /* Keep the upload card at the viewport centre in every theme, with space
    for the banner and natural scrolling when the available height is short. */
 body[data-page="upload"] {

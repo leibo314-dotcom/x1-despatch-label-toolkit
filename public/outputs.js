@@ -11,7 +11,8 @@ function updateScenery() {
 }
 
 async function generate(card, retry = false) {
-  if (card.dataset.ready === 'true') return;
+  if (card.dataset.ready === 'true' || card.dataset.state === 'pending') return;
+  if (retry) window.X1Scenery?.start();
   pending += 1;
   const badge = card.querySelector('[data-output-status]');
   const message = card.querySelector('[data-output-message]');
@@ -38,10 +39,9 @@ async function generate(card, retry = false) {
   }
 }
 // Dispatch separately: either result stays usable if the other request fails.
-if (cards.some((card) => card.dataset.ready !== 'true')) window.X1Scenery?.start();
+window.X1Scenery?.resume();
 for (const card of cards) {
   card.querySelector('[data-output-retry]').addEventListener('click', () => {
-    window.X1Scenery?.start();
     generate(card, true);
   });
   generate(card);

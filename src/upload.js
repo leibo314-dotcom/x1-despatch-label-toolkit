@@ -9,6 +9,7 @@ const statusPanel = form?.querySelector(".upload-status");
 const statusText = form?.querySelector("[data-upload-status]");
 const percentText = form?.querySelector("[data-upload-percent]");
 const progress = form?.querySelector("[data-upload-progress]");
+let inFlight = false;
 
 function safeFilename(filename) {
   const stem = filename.replace(/\.pdf$/i, "");
@@ -36,38 +37,50 @@ function showStatus(message, percentage = null) {
 
 function restoreForm(message) {
   window.X1Scenery?.reset();
+  inFlight = false;
   submitButton.disabled = false;
   submitButton.textContent = "Generate PDFs";
   showStatus(message, 0);
 }
 
-if (form?.dataset.blobUploadEnabled === "true") {
+if (form) {
   form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+    const blobEnabled = form.dataset.blobUploadEnabled === "true";
+    if (blobEnabled || inFlight) event.preventDefault();
+    if (inFlight) return;
 
     const file = fileInput.files?.[0];
     if (!file) {
+      event.preventDefault();
       restoreForm("Please choose a PDF file first.");
       return;
     }
     if (!file.name.toLowerCase().endsWith(".pdf")) {
+      event.preventDefault();
       restoreForm("Only PDF files are supported.");
       return;
     }
-    if (file.size > MAX_UPLOAD_BYTES) {
-      restoreForm("This PDF is larger than the 100 MB upload limit.");
+    const maxBytes = Number(form.dataset.maxUploadBytes) || MAX_UPLOAD_BYTES;
+    if (file.size > maxBytes) {
+      event.preventDefault();
+      restoreForm(`This PDF is larger than the ${maxBytes / 1024 / 1024} MB upload limit.`);
       return;
     }
 
-    window.X1Scenery?.start();
+    inFlight = true;
     submitButton.disabled = true;
     submitButton.textContent = "Working...";
-    showStatus("Uploading PDF...", 0);
-
-    const uploadId = crypto.randomUUID().replaceAll("-", "");
-    const pathname = `x1-inputs/${uploadId}-${safeFilename(file.name)}`;
 
     try {
+      window.X1Scenery?.start();
+      if (!blobEnabled) {
+        showStatus("Preparing your PDFs...");
+        window.X1Scenery?.navigate();
+        return; // Keep the existing multipart form and server redirect.
+      }
+      showStatus("Uploading PDF...", 0);
+      const uploadId = crypto.randomUUID().replaceAll("-", "");
+      const pathname = `x1-inputs/${uploadId}-${safeFilename(file.name)}`;
       const blob = await upload(pathname, file, {
         access: "private",
         handleUploadUrl: "/api/blob-upload",
@@ -93,9 +106,14 @@ if (form?.dataset.blobUploadEnabled === "true") {
         throw new Error(result.error || "Generation failed.");
       }
 
+      window.X1Scenery?.navigate(result.result_url);
       window.location.assign(result.result_url);
     } catch (error) {
+      event.preventDefault();
       restoreForm(error instanceof Error ? error.message : "Upload failed. Please try again.");
     }
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) restoreForm("Choose a PDF to generate again.");
   });
 }
