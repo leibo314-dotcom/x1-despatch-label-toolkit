@@ -19,7 +19,10 @@ options, and saved theme preferences are unchanged. Historical dynamic themes (`
 `city-night`) were removed in 8e18d69 and are not restored. On the current baseline,
 the old optional `X1Scenery` upload/result hooks remained without an implementation.
 Those hooks now control this score. Real upload percentages and status/error text
-remain; the old indeterminate progress animation is hidden during this operation.
+remain; the progress bar is visually hidden during Standard generation, including
+when motion is reduced. While the score is active, Standard cards use a 10% opaque
+white fill with no backdrop blur. The Standard upload button uses a 50% opaque red
+fill and fully opaque dark text; disabled styling keeps the label readable.
 
 One validated submit starts one clock. The result page resumes the same elapsed
 time, rather than starting again. A score already finished during upload stays
