@@ -5,14 +5,33 @@ import vm from 'node:vm';
 
 const source = readFileSync(new URL('../public/tekapo-cycle.js', import.meta.url), 'utf8');
 
-function page({ theme = 'tekapo-minimal', type = 'upload', now = 100000, stored, blocked = false, form = null } = {}) {
+function media({ duration = 24, readyState = 4, rejected = false } = {}) {
+  const events = {};
+  return {
+    dataset: { src: '/scene.mp4' }, duration, readyState, currentTime: 0,
+    plays: 0, pauses: 0, loads: 0,
+    load() { this.loads++; },
+    play() { this.plays++; return rejected ? Promise.reject(Error('autoplay blocked')) : Promise.resolve(); },
+    pause() { this.pauses++; },
+    addEventListener(name, callback) { events[name] = callback; },
+    emit(name) { events[name]?.(); },
+  };
+}
+
+function page({ theme = 'tekapo-minimal', type = 'upload', now = 100000, stored, blocked = false,
+                form = null, video = null, cityVideo = null, ready = [], reducedMotion = false } = {}) {
   const storage = stored ?? new Map();
   const timers = new Map();
   const properties = new Map();
   const events = {};
   let clock = now;
   let observeTheme;
+  let observeMotion;
   let timerId = 0;
+  const motionPreference = {
+    matches: reducedMotion,
+    addEventListener(name, callback) { observeMotion = callback; },
+  };
   const root = {
     dataset: { theme },
     style: {
@@ -21,8 +40,16 @@ function page({ theme = 'tekapo-minimal', type = 'upload', now = 100000, stored,
     },
   };
   const context = {
-    document: { documentElement: root, body: { dataset: { page: type } }, querySelector: () => form },
-    window: { addEventListener: (key, callback) => { events[key] = callback; } },
+    document: {
+      documentElement: root, body: { dataset: { page: type } }, hidden: false,
+      querySelector: (selector) => ({ '.upload-form': form, '.scenery-video': video, '.city-video': cityVideo })[selector],
+      querySelectorAll: () => ready.map((value) => ({ dataset: { ready: String(value) } })),
+      addEventListener: (key, callback) => { events[key] = callback; },
+    },
+    window: {
+      addEventListener: (key, callback) => { events[key] = callback; },
+      matchMedia: () => motionPreference,
+    },
     sessionStorage: {
       getItem: (key) => { if (blocked) throw Error('blocked'); return storage.get(key) ?? null; },
       setItem: (key, value) => { if (blocked) throw Error('blocked'); storage.set(key, value); },
@@ -35,8 +62,11 @@ function page({ theme = 'tekapo-minimal', type = 'upload', now = 100000, stored,
   };
   vm.runInNewContext(source, context);
   return {
-    api: context.window.X1Scenery, root, storage, properties,
+    api: context.window.X1Scenery, root, storage, properties, timers,
     theme(value) { root.dataset.theme = value; observeTheme(); },
+    motion(value) { motionPreference.matches = value; observeMotion?.(); },
+    event(name, value = {}) { events[name]?.(value); },
+    jump(ms) { clock += ms; },
     advance(ms) {
       const end = clock + ms;
       for (;;) {
@@ -51,94 +81,267 @@ function page({ theme = 'tekapo-minimal', type = 'upload', now = 100000, stored,
   };
 }
 
-test('fast generation completes one cycle without stopping as soon as the PDF is ready', () => {
+test('fast PDF completion leaves the one-way timeline running, then holds night permanently', () => {
   const app = page();
-  app.api.start();
+  assert.equal(app.api.start(), undefined);
   app.advance(1000);
-  app.api.complete();
-  app.advance(14999);
+  assert.equal(app.api.complete(), undefined);
+  app.advance(22999);
   assert.equal(app.root.dataset.scenery, 'running');
   app.advance(1);
-  assert.equal(app.root.dataset.scenery, undefined);
-  assert.equal(app.storage.size, 0);
+  assert.equal(app.root.dataset.scenery, 'night');
+  assert.equal(app.properties.get('--scenery-delay'), '-24s');
+  app.advance(3600000);
+  assert.equal(app.root.dataset.scenery, 'night');
+  assert.equal(app.timers.size, 0);
+  assert.deepEqual(JSON.parse(app.storage.get('x1-tekapo-cycle')), { version: 2, startedAt: 100000 });
 });
 
-test('upload navigation resumes the same phase and long generation finishes its current cycle', () => {
+test('result navigation resumes absolute elapsed time and repeated output starts never restart it', () => {
   const upload = page();
   upload.api.start();
   const result = page({ type: 'result', now: 106000, stored: upload.storage });
   assert.equal(result.properties.get('--scenery-delay'), '-6s');
   result.api.start();
-  result.advance(15000);
+  result.advance(18000);
+  assert.equal(result.root.dataset.scenery, 'night');
+  result.api.start();
   result.api.complete();
-  result.advance(10999);
-  assert.equal(result.root.dataset.scenery, 'running');
-  result.advance(1);
-  assert.equal(result.root.dataset.scenery, undefined);
+  assert.equal(result.root.dataset.scenery, 'night');
+  assert.equal(result.properties.get('--scenery-delay'), '-24s');
 });
 
-test('retry resumes processing without an earlier completion timer stopping it', () => {
-  const app = page();
-  app.api.start();
-  app.api.complete();
-  app.advance(5000);
-  app.api.start();
-  app.advance(12000);
-  assert.equal(app.root.dataset.scenery, 'running');
-  app.api.reset();
-  assert.equal(app.root.dataset.scenery, undefined);
+test('night survives result reloads long after completion and bfcache resumption', () => {
+  const upload = page();
+  upload.api.start();
+  const result = page({ type: 'result', now: 3700000, stored: upload.storage });
+  assert.equal(result.root.dataset.scenery, 'night');
+  result.event('pageshow', { persisted: true });
+  assert.equal(result.root.dataset.scenery, 'night');
+  const running = page({ type: 'result', now: 105000, stored: upload.storage });
+  running.jump(50000);
+  running.event('visibilitychange');
+  assert.equal(running.root.dataset.scenery, 'night');
 });
 
-test('other themes stay unchanged and switching away clears the animation', () => {
+test('repeat renders preserve the original CSS offset while video time keeps advancing', () => {
+  const upload = page();
+  upload.api.start();
+  const video = media();
+  const result = page({ type: 'result', now: 106000, stored: upload.storage, video });
+  assert.equal(result.properties.get('--scenery-delay'), '-6s');
+  result.advance(2000);
+  result.event('visibilitychange');
+  assert.equal(result.properties.get('--scenery-delay'), '-6s');
+  assert.equal(video.currentTime, 8);
+  result.api.start();
+  assert.equal(result.properties.get('--scenery-delay'), '-6s');
+  result.advance(16000);
+  assert.equal(result.root.dataset.scenery, 'night');
+  assert.equal(result.properties.get('--scenery-delay'), '-24s');
+  result.api.reset();
+  result.api.start();
+  assert.equal(result.properties.get('--scenery-delay'), '0s');
+});
+
+test('a completed result without storage opens at night', () => {
+  const result = page({ type: 'result', blocked: true, ready: [true, true] });
+  assert.equal(result.root.dataset.scenery, 'night');
+});
+
+test('explicit reset and a fresh upload clear night while other themes stay unchanged', () => {
   const standard = page({ theme: 'standard' });
   standard.api.start();
   assert.equal(standard.root.dataset.scenery, undefined);
   const app = page();
+  app.api.start();
+  app.advance(24000);
+  app.api.reset();
+  assert.equal(app.root.dataset.scenery, undefined);
+  assert.equal(app.storage.size, 0);
   app.api.start();
   app.theme('sakura');
   assert.equal(app.root.dataset.scenery, undefined);
   assert.equal(app.storage.size, 0);
 });
 
-test('storage failures do not break generation or same-page animation', () => {
+test('storage failures do not block animation, generation or explicit new-upload reset', () => {
   const app = page({ blocked: true });
   app.api.start();
-  assert.equal(app.root.dataset.scenery, 'running');
   app.api.complete();
-  app.advance(16000);
+  app.advance(24000);
+  assert.equal(app.root.dataset.scenery, 'night');
+  app.event('pageshow', { persisted: true });
   assert.equal(app.root.dataset.scenery, undefined);
 });
 
-test('error pages and stale result visits clear previous runs', () => {
+test('errors and new upload pages discard state; old version and future timestamps are rejected', () => {
   const upload = page();
   upload.api.start();
-  const error = page({ type: 'error', stored: upload.storage });
-  assert.equal(error.storage.size, 0);
+  assert.equal(page({ type: 'error', stored: upload.storage }).storage.size, 0);
+  for (const value of [{ startedAt: 99900, stopAt: null }, { version: 2, startedAt: 100001 }]) {
+    const stored = new Map([['x1-tekapo-cycle', JSON.stringify(value)]]);
+    assert.equal(page({ type: 'result', stored }).root.dataset.scenery, undefined);
+    assert.equal(stored.size, 0);
+  }
+});
+
+test('Tekapo media is muted, preloaded, synchronized after navigation, never looped and held on its final frame', () => {
+  const video = media();
+  const upload = page({ video });
+  assert.equal(video.loads, 1);
+  assert.equal(video.muted, true);
+  assert.equal(video.loop, false);
   upload.api.start();
-  const stale = page({ type: 'result', now: 1100000, stored: upload.storage });
-  assert.equal(stale.root.dataset.scenery, undefined);
-  assert.equal(stale.storage.size, 0);
+  const resumedVideo = media();
+  const result = page({ type: 'result', now: 109000, stored: upload.storage, video: resumedVideo });
+  assert.equal(resumedVideo.currentTime, 9);
+  assert.ok(resumedVideo.plays > 0);
+  result.advance(15000);
+  assert.equal(result.root.dataset.scenery, 'night');
+  assert.ok(Math.abs(resumedVideo.currentTime - (24 - 1 / 30)) < 0.001);
+  const plays = resumedVideo.plays;
+  result.api.start();
+  assert.equal(resumedVideo.plays, plays);
+});
+
+test('late decoding seeks the elapsed position; failed media uses fallback without affecting PDF hooks', async () => {
+  const video = media({ readyState: 0, rejected: true });
+  const app = page({ video });
+  app.api.start();
+  app.advance(5000);
+  video.readyState = 4;
+  video.emit('canplay');
+  await Promise.resolve();
+  assert.equal(video.currentTime, 5);
+  assert.equal(app.root.dataset.sceneryVideo, 'fallback');
+  assert.equal(app.api.complete(), undefined);
+  app.advance(19000);
+  assert.equal(app.root.dataset.scenery, 'night');
+});
+
+test('inactive video assets are not preloaded and theme changes remain isolated', () => {
+  const video = media();
+  const cityVideo = media();
+  const app = page({ theme: 'standard', video, cityVideo });
+  assert.equal(video.loads + cityVideo.loads, 0);
+  app.theme('tekapo-minimal');
+  assert.equal(video.loads, 1);
+  assert.equal(cityVideo.loads, 0);
+  app.api.start();
+  app.theme('city-night');
+  assert.equal(cityVideo.loads, 1);
+  assert.equal(app.root.dataset.scenery, undefined);
+  assert.equal(app.storage.has('x1-tekapo-cycle'), false);
+});
+
+test('City plays only while processing then pauses and preserves its exact current frame across reloads', () => {
+  const video = media({ duration: 30 });
+  const app = page({ theme: 'city-night', cityVideo: video });
+  app.api.start();
+  assert.equal(video.loop, true);
+  assert.equal(app.root.dataset.scenery, 'running');
+  video.currentTime = 8.75;
+  app.api.complete();
+  assert.equal(app.root.dataset.scenery, 'paused');
+  assert.equal(JSON.parse(app.storage.get('x1-city-cycle')).mediaTime, 8.75);
+  const restored = media({ duration: 30 });
+  const result = page({ theme: 'city-night', type: 'result', cityVideo: restored,
+                        now: 200000, stored: app.storage, ready: [true, true] });
+  assert.equal(result.root.dataset.scenery, 'paused');
+  assert.equal(restored.currentTime, 8.75);
+  assert.equal(restored.plays, 0);
+  result.advance(60000);
+  assert.equal(restored.currentTime, 8.75);
+});
+
+test('City resumes in-flight elapsed time and errors pause without clearing the frame; retry resumes it', () => {
+  const app = page({ theme: 'city-night', cityVideo: media({ duration: 30 }) });
+  app.api.start();
+  const video = media({ duration: 30 });
+  const result = page({ theme: 'city-night', type: 'result', cityVideo: video, now: 135000, stored: app.storage });
+  assert.equal(video.currentTime, 5);
+  video.currentTime = 7.2;
+  result.api.reset();
+  assert.equal(result.root.dataset.scenery, 'paused');
+  assert.equal(video.currentTime, 7.2);
+  result.api.start();
+  assert.equal(result.root.dataset.scenery, 'running');
+  assert.equal(video.currentTime, 7.2);
+  result.theme('standard');
+  assert.equal(result.root.dataset.scenery, undefined);
+  assert.equal(result.storage.size, 0);
+});
+
+test('reduced-motion uses static fallback without downloading or playing either video', () => {
+  const video = media();
+  const cityVideo = media();
+  const app = page({ video, cityVideo, reducedMotion: true });
+  app.api.start();
+  assert.equal(app.root.dataset.sceneryVideo, 'fallback');
+  app.advance(24000);
+  assert.equal(app.root.dataset.scenery, 'night');
+  app.theme('city-night');
+  app.api.start();
+  app.api.complete();
+  assert.equal(app.root.dataset.scenery, 'paused');
+  assert.equal(video.loads + cityVideo.loads + video.plays + cityVideo.plays, 0);
+});
+
+test('changing reduced-motion preference pauses media and can restore playback', () => {
+  const video = media();
+  const app = page({ video, reducedMotion: true });
+  app.api.start();
+  app.advance(5000);
+  app.motion(false);
+  assert.equal(video.loads, 1);
+  assert.ok(video.plays > 0);
+  assert.equal(app.properties.get('--scenery-delay'), '-5s');
+  app.motion(true);
+  assert.equal(app.root.dataset.sceneryVideo, 'fallback');
+  assert.ok(video.pauses > 0);
+});
+
+test('City completion before metadata normalizes its saved frame to the real video duration', () => {
+  const video = media({ readyState: 0, duration: NaN });
+  const app = page({ theme: 'city-night', cityVideo: video });
+  app.api.start();
+  app.advance(18000);
+  app.api.complete();
+  assert.equal(JSON.parse(app.storage.get('x1-city-cycle')).mediaTime, 18);
+  video.readyState = 4;
+  video.duration = 12;
+  video.emit('loadedmetadata');
+  assert.equal(video.currentTime, 6);
+  assert.equal(JSON.parse(app.storage.get('x1-city-cycle')).mediaTime, 6);
+  assert.equal(app.root.dataset.scenery, 'paused');
+  assert.equal(video.plays, 0);
 });
 
 function nativeForm(size) {
   let submit;
+  let change;
+  const input = { files: [{ name: 'schedule.pdf', size }], addEventListener(name, callback) { change = callback; } };
   return {
     dataset: { blobUploadEnabled: 'false', maxUploadBytes: '26214400' },
-    querySelector: () => ({ files: [{ name: 'schedule.pdf', size }] }),
+    querySelector: () => input,
     checkValidity: () => true,
     addEventListener(event, callback) { if (event === 'submit') submit = callback; },
     submit() { submit({ defaultPrevented: false }); },
+    change() { change(); },
   };
 }
 
-test('native uploads within the configured size limit start the scenery', () => {
+test('valid native upload starts scenery; selecting a new input clears the old background', () => {
   const form = nativeForm(26214400);
   const app = page({ form });
   form.submit();
   assert.equal(app.root.dataset.scenery, 'running');
+  form.change();
+  assert.equal(app.root.dataset.scenery, undefined);
 });
 
-test('oversized native uploads do not start the scenery before the server rejects them', () => {
+test('oversized native uploads do not start scenery before the server rejects them', () => {
   const form = nativeForm(26214401);
   const app = page({ form });
   form.submit();
@@ -173,7 +376,7 @@ function outputsPage() {
   };
 }
 
-test('PDF requests run independently and downloads become usable before the cycle finishes', async () => {
+test('PDF requests remain independent and downloads become usable before scenery completes', async () => {
   const app = outputsPage();
   assert.equal(app.requests.length, 2);
   assert.equal(app.calls.start, 1);
@@ -185,7 +388,7 @@ test('PDF requests run independently and downloads become usable before the cycl
   assert.equal(app.calls.complete, 1);
 });
 
-test('a failed output resets the scenery without blocking the other PDF', async () => {
+test('a failed output invokes scenery reset without blocking the other PDF', async () => {
   const app = outputsPage();
   await app.settle(0, false);
   assert.equal(app.calls.reset, 1);

@@ -1,0 +1,22 @@
+Night City background footage
+Verified 2026-10-12 (Pacific/Auckland)
+
+Chosen source: Time-Lapse Video of a Busy Street at Night
+Creator: Paulo Renato
+Pexels video ID: 4196363
+Source page: https://www.pexels.com/video/time-lapse-video-of-a-busy-street-at-night-4196363/
+Official download redirect: https://videos.pexels.com/video-files/4196363/4196363-uhd_3240_2160_30fps.mp4
+License: Pexels License, https://www.pexels.com/license/
+
+Verification: The official clip page labels this footage "Free to use" and links to the Pexels License. The official license permits free downloading, editing, and online website/app use. Attribution is optional. The footage must not imply endorsement, be sold as an unmodified standalone asset, or be redistributed as stock/wallpaper media. This use is a decorative background in a PDF-generation web application.
+
+Source properties: 3240 x 2160, 29.97 fps, approximately 12.27 seconds, real fixed-camera street footage with moving traffic/light trails. Not AI generated. The webpage explicitly identifies it as time-lapse footage.
+Prepared video: city-night-timelapse.mp4
+Prepared properties: H.264 High, yuv420p, 1280 x 854, 29.97 fps, approximately 12.25 seconds, no audio, MP4 fast-start metadata, 3,540,106 bytes.
+Prepared video SHA256: 08F91D829348433704450ED87E457ECF24642E7BE0760757E8BF28907E631BD0
+Prepared poster: city-night-poster.webp, 1280 x 854, 80,466 bytes, extracted from the prepared video's first frame.
+Edits: downscaled for web delivery and removed audio; no invented movement, frame interpolation, color animation, or camera zoom.
+
+Suggested optional credit: Night street footage by Paulo Renato / Pexels.
+
+Implementation guidance: Use a muted, playsinline video with object-fit: cover. Keep it paused until Generate is triggered. Pause at the current frame once both independent outputs are terminal. Do not delay PDF availability to finish the clip. The source is short, so repeated playback may be used only while processing; do not play backwards. Consider object-position: center 65% on wide screens to preserve more of the road. Keep the central glass panel dark/subtle, avoiding a heavy global overlay that hides the city.

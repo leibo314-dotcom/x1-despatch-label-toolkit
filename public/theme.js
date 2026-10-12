@@ -1,6 +1,6 @@
 (() => {
   const storageKey = 'x1-page-theme';
-  const themes = new Set(['standard', 'tekapo', 'sakura', 'tekapo-minimal']);
+  const themes = new Set(['standard', 'tekapo', 'sakura', 'tekapo-minimal', 'city-night']);
   let theme = 'tekapo';
 
   try {
