@@ -1,12 +1,13 @@
 (() => {
   const storageKey = 'x1-page-theme';
   // Keep the saved Standard key: its user-facing name is now Simple.
-  const themes = new Set(['standard', 'original', 'tekapo', 'sakura', 'cat']);
+  const themes = new Set(['standard', 'original', 'tekapo', 'sakura']);
   let theme = 'tekapo';
 
   try {
     const saved = localStorage.getItem(storageKey);
     if (themes.has(saved)) theme = saved;
+    else if (saved === 'cat') localStorage.setItem(storageKey, theme);
   } catch {
     // The page remains usable when browser storage is unavailable.
   }

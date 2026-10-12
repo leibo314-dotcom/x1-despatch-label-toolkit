@@ -42,3 +42,14 @@ test('the default and blocked-storage theme picker remain usable', () => {
   app.select('original');
   assert.equal(app.root.dataset.theme, 'original');
 });
+
+test('a removed cat preference falls back and saves Lake Tekapo', () => {
+  const app = page('cat');
+  assert.equal(app.root.dataset.theme, 'tekapo');
+  assert.equal(app.picker.value, 'tekapo');
+  assert.equal(app.storage.value, 'tekapo');
+  assert.equal(page(app.storage.value).root.dataset.theme, 'tekapo');
+  app.select('cat');
+  assert.equal(app.root.dataset.theme, 'tekapo');
+  assert.equal(page('cat', true).root.dataset.theme, 'tekapo');
+});
