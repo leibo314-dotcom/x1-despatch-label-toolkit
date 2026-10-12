@@ -182,6 +182,10 @@ body[data-page="upload"] .flash-list {
   margin: 0 auto;
 }
 
+body[data-page="result"] .shell {
+  padding-top: 64px;
+}
+
 @media (max-width: 720px) {
   body[data-page="upload"] {
     --upload-banner-height: 76px;
@@ -189,6 +193,10 @@ body[data-page="upload"] .flash-list {
 
   body[data-page="upload"] .flash-list {
     width: min(606.4px, calc(80vw - 19.2px));
+  }
+
+  body[data-page="result"] .shell {
+    padding-top: 32px;
   }
 }
 
